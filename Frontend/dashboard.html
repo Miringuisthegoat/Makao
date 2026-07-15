@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Host Dashboard — Makao</title>
+  <meta name="description" content="Manage your listings, track performance, and grow your rental business on Makao." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:;base64,=" />
+<style>
+    /* =============================================
+       Dashboard-specific styles
+       ============================================= */
+
+    /* ── Page shell ── */
+    body.dashboard-page {
+      background: var(--off-white);
+      min-height: 100vh;
+      --nav-h: 68px; /* Fallback calculation guarantees proper layout alignment under navbar */
+    }
+
+    /* ── Navbar override: always dark on dashboard ── */
+    body.dashboard-page .navbar {
+      background: rgba(10,10,10,0.96);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* ── Notification dot on avatar ── */
+    .nav-avatar-wrap { position: relative; cursor: pointer; }
+    .nav-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: var(--charcoal);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 500; color: var(--white);
+    }
+    .nav-notif-dot {
+      position: absolute;
+      top: -2px; right: -2px;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      border: 2px solid var(--dark);
+    }
+
+    /* =============================================
+       DASHBOARD HERO (Two-Column Flex Split Layout)
+       Sits directly under the 68px navbar.
+       ============================================= */
+    .dash-hero {
+      position: relative;
+      width: 100%;
+      min-height: 380px;
+      overflow: hidden;
+      display: flex;
+      align-items: stretch; /* Forces left (image-side) and right (content-side) to equal heights */
+      background: #111111;   /* Smooth obsidian dark background block */
+    }
+
+    /* Target the flat layout image element to construct the left column */
+    .dash-hero > img {
+      flex: 1;
+      width: 50%;            /* Standard half-pane footprint initialization */
+      height: auto;
+      object-fit: cover;     /* Crops and handles ratio shifts beautifully without distorting */
+      display: block;
+      filter: brightness(0.55) saturate(0.85); /* Matches original dramatic overlay aesthetic tone */
+      z-index: 1;
+    }
+
+    /* Layout structural layer handling data fields & action groups as the right column */
+    .dash-hero-content {
+      flex: 1.2;             /* Claims slightly more horizontal ratio space for text content data */
+      position: relative;
+      z-index: 2;
+      background: #111111;
+      padding: 56px 48px;    /* Generous internal spacing padding alignment */
+      display: flex;
+      align-items: center;   /* Centers inner elements perfectly regardless of dynamic updates */
+      justify-content: space-between;
+      gap: 32px;
+      width: 50%;
+      animation: heroIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes heroIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Left block alignment properties container */
+    .dash-hero-left { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px;
+      max-width: 640px;
+    }
+
+    /* Ambient glow overlay details */
+    .dash-hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(17,17,17,0.3) 0%, rgba(17,17,17,0.9) 50%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Thin accent stripe at very bottom of the entire hero section */
+    .dash-hero-stripe {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light), transparent);
+      z-index: 5;
+    }
+
+    .dash-hero-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+    }
+    .dash-hero-eyebrow span.dot {
+      width: 6px; height: 6px;
+      background: #22c55e;
+      border-radius: 50%;
+      display: inline-block;
+      animation: fabPulse 2s infinite;
+    }
+
+    .dash-hero-greeting {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 3.8vw, 44px);
+      line-height: 1.15;
+      color: var(--white);
+      letter-spacing: 0.5px;
+    }
+    .dash-hero-greeting em {
+      color: var(--accent-light);
+      font-style: normal;
+    }
+
+    .dash-hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .dash-hero-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+    }
+    .dash-hero-meta-item svg { color: var(--accent); flex-shrink: 0; }
+    .dash-hero-meta-item strong { color: rgba(255,255,255,0.85); font-weight: 500; }
+
+    /* Agency verified badge in hero */
+    .hero-verified-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(26,122,74,0.25);
+      border: 1px solid rgba(26,122,74,0.5);
+      color: #4ade91;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 50px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Right side interactive buttons block */
+    .dash-hero-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-shrink: 0;
+      min-width: 170px;
+    }
+
+    .btn-hero-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--accent);
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 12px 22px;
+      border-radius: 50px;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn-hero-primary:hover {
+      background: var(--accent-light);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(200,82,42,0.4);
+    }
+
+    .btn-hero-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.85);
+      font-size: 14px;
+      font-weight: 400;
+      padding: 12px 22px;
+      border-radius: 50px;
+      transition: background var(--transition), border-color var(--transition);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn-hero-ghost:hover {
+      background: rgba(255,255,255,0.16);
+      border-color: rgba(255,255,255,0.35);
+    }
+
+    /* =============================================
+       STATS ROW — floats over the hero/page join
+       ============================================= */
+    .dash-stats-row {
+      max-width: 1200px;
+      margin: -36px auto 0;
+      padding: 0 32px;
+      position: relative;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      transition: transform var(--transition), box-shadow var(--transition);
+      animation: cardIn 0.5s ease both;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+    .stat-card:nth-child(1) { animation-delay: 0.05s; }
+    .stat-card:nth-child(2) { animation-delay: 0.10s; }
+    .stat-card:nth-child(3) { animation-delay: 0.15s; }
+    .stat-card:nth-child(4) { animation-delay: 0.20s; }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stat-card-label {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+    }
+    .stat-card-icon {
+      width: 34px; height: 34px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .stat-card-icon.orange { background: rgba(200,82,42,0.1); color: var(--accent); }
+    .stat-card-icon.green  { background: rgba(26,122,74,0.1);  color: var(--green); }
+    .stat-card-icon.blue   { background: rgba(59,130,246,0.1); color: #3b82f6; }
+    .stat-card-icon.purple { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+
+    .stat-card-num {
+      font-family: var(--font-display);
+      font-size: 38px;
+      color: var(--dark);
+      line-height: 1;
+      letter-spacing: 0.5px;
+    }
+    .stat-card-change {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .stat-card-change.up   { color: var(--green); }
+    .stat-card-change.down { color: #ef4444; }
+    .stat-card-change.neutral { color: var(--muted); }
+
+    /* =============================================
+       MAIN LAYOUT — sidebar + content
+       ============================================= */
+    .dash-layout {
+      max-width: 1200px;
+      margin: 36px auto 80px;
+      padding: 0 32px;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* ── Sidebar Nav ── */
+    .dash-sidebar {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px;
+      position: sticky;
+      top: calc(var(--nav-h) + 24px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .dash-nav-section {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+    .dash-nav-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+    .dash-nav-label {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      padding: 6px 14px 8px;
+    }
+
+    .dash-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--mid);
+      transition: background var(--transition), color var(--transition);
+      cursor: pointer;
+      position: relative;
+      text-decoration: none;
+    }
+    .dash-nav-item:hover { background: var(--off-white); color: var(--dark); }
+    .dash-nav-item.active {
+      background: rgba(200,82,42,0.08);
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .dash-nav-item.active svg { color: var(--accent); }
+    .dash-nav-item svg { flex-shrink: 0; opacity: 0.7; }
+    .dash-nav-item.active svg { opacity: 1; }
+
+    .nav-badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 50px;
+      min-width: 20px;
+      text-align: center;
+    }
+    .nav-badge.green { background: var(--green); }
+
+    /* ── Main Content ── */
+    .dash-content { display: flex; flex-direction: column; gap: 28px; }
+
+    /* Section header */
+    .dash-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .dash-section-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: var(--dark);
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Panel / Card wrapper ── */
+    .dash-panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+    }
+
+    /* =============================================
+       LISTINGS TABLE
+       ============================================= */
+    .listings-table-wrap { overflow-x: auto; }
+
+    .listings-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .listings-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      padding: 0 16px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .listings-table td {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      color: var(--dark);
+    }
+    .listings-table tr:last-child td { border-bottom: none; }
+    .listings-table tr:hover td { background: #fafaf8; }
+
+    /* Listing thumb + title cell */
+    .listing-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .listing-thumb {
+      width: 52px; height: 44px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      background: var(--border);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .listing-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .listing-cell-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 2px;
+      white-space: nowrap;
+    }
+    .listing-cell-loc {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 3px;
+    }
+
+    /* Status pill */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .status-pill::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-pill.live    { background: rgba(26,122,74,0.1);  color: var(--green);  }
+    .status-pill.live::before    { background: var(--green); }
+    .status-pill.pending { background: rgba(245,158,11,0.1); color: #d97706; }
+    .status-pill.pending::before { background: #f59e0b; }
+    .status-pill.paused  { background: rgba(136,136,136,0.1); color: var(--muted); }
+    .status-pill.paused::before  { background: var(--muted); }
+
+    /* Package badge */
+    .pkg-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 9px;
+      border-radius: 50px;
+      letter-spacing: 0.3px;
+    }
+    .pkg-badge.agency   { background: rgba(26,122,74,0.1);  color: var(--green); border: 1px solid rgba(26,122,74,0.25); }
+    .pkg-badge.landlord { background: rgba(200,82,42,0.08); color: var(--accent); border: 1px solid rgba(200,82,42,0.2); }
+
+    /* Row actions */
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .row-action-btn {
+      width: 30px; height: 30px;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted);
+      transition: background var(--transition), color var(--transition);
+      cursor: pointer;
+    }
+    .row-action-btn:hover { background: var(--off-white); color: var(--dark); }
+    .row-action-btn.danger:hover { background: rgba(239,68,68,0.08); color: #ef4444; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 56px 24px;
+      text-align: center;
+    }
+    .empty-state-icon {
+      font-size: 40px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 6px;
+    }
+    .empty-state p {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      max-width: 320px;
+    }
+
+    /* =============================================
+       BOOSTERS / UPGRADES PANEL
+       ============================================= */
+    .boosters-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .booster-card {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color var(--transition), box-shadow var(--transition);
+      cursor: pointer;
+    }
+    .booster-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 16px rgba(200,82,42,0.1);
+    }
+    .booster-icon {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .booster-icon.orange { background: rgba(200,82,42,0.1); }
+    .booster-icon.gold   { background: rgba(181,134,13,0.1); }
+    .booster-icon.green  { background: rgba(26,122,74,0.1); }
+    .booster-icon.blue   { background: rgba(59,130,246,0.1); }
+
+    .booster-info h4 {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 3px;
+    }
+    .booster-info p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* =============================================
+       ACTIVITY FEED
+       ============================================= */
+    .activity-list { display: flex; flex-direction: column; }
+
+    .activity-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+
+    .activity-dot-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      padding-top: 3px;
+    }
+    .activity-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .activity-dot.green  { background: var(--green); }
+    .activity-dot.orange { background: var(--accent); }
+    .activity-dot.blue   { background: #3b82f6; }
+    .activity-dot.muted  { background: var(--muted); }
+
+    .activity-body { flex: 1; }
+    .activity-body p { font-size: 13px; color: var(--dark); line-height: 1.5; }
+    .activity-body p strong { font-weight: 500; }
+    .activity-time {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* =============================================
+       QUICK TIPS BANNER
+       ============================================= */
+    .tips-banner {
+      background: linear-gradient(135deg, var(--dark) 0%, #1e1410 100%);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      overflow: hidden;
+      position: relative;
+    }
+    .tips-banner::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(200,82,42,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .tips-banner-text h3 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--white);
+      margin-bottom: 4px;
+      letter-spacing: 0.3px;
+    }
+    .tips-banner-text p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* =============================================
+       PROGRESS / PROFILE COMPLETION
+       ============================================= */
+    .profile-progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--border);
+      border-radius: 50px;
+      overflow: hidden;
+      margin: 8px 0 12px;
+    }
+    .profile-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      border-radius: 50px;
+      transition: width 1s ease;
+    }
+    .profile-steps { display: flex; flex-direction: column; gap: 10px; }
+    .profile-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .profile-step-check {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 10px;
+    }
+    .profile-step-check.done { background: var(--green); color: white; }
+    .profile-step-check.todo { background: var(--border); color: var(--muted); }
+    .profile-step span { color: var(--mid); }
+    .profile-step span.done-text { color: var(--dark); font-weight: 500; }
+
+    /* =============================================
+       BOTTOM GRID: SIDE BY SIDE PANELS
+       ============================================= */
+    .dash-bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 28px;
+    }
+
+    /* =============================================
+       RESPONSIVE BREAKPOINTS
+       ============================================= */
+    @media (max-width: 1024px) {
+      .dash-layout { grid-template-columns: 200px 1fr; padding: 0 20px; }
+      .dash-stats-row { padding: 0 20px; grid-template-columns: repeat(2, 1fr); }
+      .dash-bottom-grid { grid-template-columns: 1fr; }
+      .dash-hero-content { padding: 40px 24px; gap: 20px; }
+    }
+
+    @media (max-width: 768px) {
+      .dash-hero { min-height: auto; flex-direction: column; }
+      .dash-hero > img { width: 100%; height: 220px; } /* Converts left pane to a top-banner layout cleanly on tablets/mobiles */
+      .dash-hero-overlay { background: linear-gradient(0deg, rgba(17,17,17,0.9) 0%, rgba(17,17,17,0.2) 100%); }
+      .dash-hero-content { width: 100%; padding: 32px 20px; flex-direction: column; align-items: flex-start; }
+      .dash-hero-actions { width: 100%; flex-direction: row; }
+      .dash-hero-actions > a { flex: 1; }
+      .dash-stats-row { grid-template-columns: repeat(2, 1fr); margin-top: -24px; }
+      .dash-layout { grid-template-columns: 1fr; margin-top: 24px; padding: 0 16px; }
+      .dash-sidebar { position: static; }
+      .dash-nav-section { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 0; }
+      .dash-nav-label { width: 100%; }
+      .boosters-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .dash-stats-row { grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; }
+      .stat-card { padding: 16px; }
+      .stat-card-num { font-size: 30px; }
+      .dash-hero-greeting { font-size: 30px; }
+      .dash-hero-actions { flex-direction: column; }
+      .dash-hero-actions > a { width: 100%; }
+      .listings-table { font-size: 13px; }
+      .listings-table th:nth-child(3),
+      .listings-table td:nth-child(3),
+      .listings-table th:nth-child(4),
+      .listings-table td:nth-child(4) { display: none; }
+    }
+</style>
+</head>
+<body class="dashboard-page">
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">Makao</span>
+      </a>
+
+      <!-- Dashboard quick nav -->
+      <ul class="nav-links">
+        <li><a href="dashboard.html" class="active">Dashboard</a></li>
+        <li><a href="add-listing.html">Add Listing</a></li>
+        <li><a href="billing.html">Billing</a></li>
+        <li><a href="analytics.html">Analytics</a></li>
+      </ul>
+
+      <div class="nav-auth">
+        <!-- Host avatar + name -->
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:13px;color:rgba(255,255,255,0.55);" id="navHostName">Loading...</span>
+          <div class="nav-avatar-wrap" id="navAvatarWrap">
+            <div class="nav-avatar" id="navAvatar">J</div>
+            <span class="nav-notif-dot" id="navNotifDot" style="display:none;"></span>
+          </div>
+        </div>
+        <a href="login.html" class="btn-ghost" id="logoutBtn" style="font-size:13px;padding:7px 14px;">Log out</a>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="add-listing.html">Add Listing</a></li>
+      <li><a href="billing.html">Billing</a></li>
+      <li><a href="analytics.html">Analytics</a></li>
+      <li><a href="login.html" class="mobile-join">Log out</a></li>
+    </ul>
+  </div>
+
+  <!-- =============================================
+       DASHBOARD HERO
+       ============================================= -->
+  <section class="dash-hero" id="dashHero" style="margin-top: var(--nav-h);">
+    <div class="dash-hero-bg" id="dashHeroBg"></div>
+    <div class="dash-hero-overlay"></div>
+    <div class="dash-hero-stripe"></div>
+    <img src="../Images/skyline.jpg" alt="Nairobi">
+
+    <div class="dash-hero-content">
+      <!-- Left: greeting & meta -->
+      <div class="dash-hero-left">
+        <div class="dash-hero-eyebrow">
+          <span class="dot"></span>
+          Host Dashboard
+        </div>
+
+        <h1 class="dash-hero-greeting">
+          Welcome back, <em id="heroHostName">James</em>
+        </h1>
+
+        <div class="dash-hero-meta">
+          <!-- Agency badge (shown conditionally) -->
+          <span class="hero-verified-badge" id="heroAgencyBadge" style="display:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Verified Agency
+          </span>
+
+          <div class="dash-hero-meta-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <strong id="heroListingsCount">—</strong> Active Listings
+          </div>
+
+          <div class="dash-hero-meta-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <strong id="heroViewsCount">—</strong> Views this month
+          </div>
+
+          <div class="dash-hero-meta-item">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Member since <strong id="heroMemberSince">—</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: actions -->
+      <div class="dash-hero-actions">
+        <a href="add-listing.html" class="btn-hero-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Listing
+        </a>
+        <a href="pricing.html" class="btn-hero-ghost">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Boost Listings
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================
+       STATS ROW (floats over hero/page boundary)
+       ============================================= */
+  <div class="dash-stats-row" id="dashStatsRow">
+
+    <div class="stat-card">
+      <div class="stat-card-header">
+        <span class="stat-card-label">Active Listings</span>
+        <div class="stat-card-icon orange">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+      </div>
+      <div class="stat-card-num" id="statListings">0</div>
+      <div class="stat-card-change neutral" id="statListingsChange">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        No change this month
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-header">
+        <span class="stat-card-label">Total Views</span>
+        <div class="stat-card-icon blue">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+      </div>
+      <div class="stat-card-num" id="statViews">0</div>
+      <div class="stat-card-change up" id="statViewsChange">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+        +12% from last month
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-header">
+        <span class="stat-card-label">Enquiries</span>
+        <div class="stat-card-icon green">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+      </div>
+      <div class="stat-card-num" id="statEnquiries">0</div>
+      <div class="stat-card-change up" id="statEnquiriesChange">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+        +3 new this week
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-header">
+        <span class="stat-card-label">Featured Slots</span>
+        <div class="stat-card-icon purple">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+      </div>
+      <div class="stat-card-num" id="statFeatured">0</div>
+      <div class="stat-card-change neutral" id="statFeaturedChange">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Active boosters
+      </div>
+    </div>
+
+  </div><!-- /dash-stats-row -->
+
+
+  <!-- =============================================
+       MAIN DASHBOARD LAYOUT
+       ============================================= -->
+  <div class="dash-layout">
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="dash-sidebar">
+
+      <div class="dash-nav-section">
+        <p class="dash-nav-label">Overview</p>
+        <a href="dashboard.html" class="dash-nav-item active">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="analytics.html" class="dash-nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+          <span class="nav-badge green" id="agencyOnlyBadge" style="display:none;">Agency</span>
+        </a>
+      </div>
+
+      <div class="dash-nav-section">
+        <p class="dash-nav-label">Listings</p>
+        <a href="add-listing.html" class="dash-nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add New Listing
+        </a>
+        <a href="dashboard.html#my-listings" class="dash-nav-item" onclick="scrollToListings(event)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          My Listings
+          <span class="nav-badge" id="sidebarListingsBadge">0</span>
+        </a>
+      </div>
+
+      <div class="dash-nav-section">
+        <p class="dash-nav-label">Account</p>
+        <a href="billing.html" class="dash-nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <a href="#" class="dash-nav-item" id="sidebarProfileLink">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Profile Settings
+        </a>
+        <a href="pricing.html" class="dash-nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Upgrade / Boosters
+        </a>
+      </div>
+
+      <div class="dash-nav-section">
+        <a href="login.html" class="dash-nav-item" style="color: #ef4444; opacity: 0.8;" id="sidebarLogout">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log out
+        </a>
+      </div>
+
+    </aside>
+
+    <!-- ── MAIN CONTENT ── -->
+    <div class="dash-content">
+
+      <!-- Tips / upsell banner -->
+      <div class="tips-banner" id="tipsBanner">
+        <div class="tips-banner-text">
+          <h3>Boost your listing visibility 🚀</h3>
+          <p>Feature your property on the homepage and get priority AI recommendations.</p>
+        </div>
+        <a href="pricing.html" class="btn-hero-primary" style="flex-shrink:0;">
+          View Boosters
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+
+      <!-- ── MY LISTINGS TABLE ── -->
+      <div class="dash-panel" id="my-listings">
+        <div class="dash-section-header">
+          <h2 class="dash-section-title">My Listings</h2>
+          <a href="add-listing.html" class="btn-hero-primary" style="font-size:13px;padding:10px 18px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Listing
+          </a>
+        </div>
+
+        <!-- Loaded listings table -->
+        <div class="listings-table-wrap" id="listingsTableWrap">
+          <table class="listings-table" id="listingsTable">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Status</th>
+                <th>Package</th>
+                <th>Monthly Rent</th>
+                <th>Views</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="listingsTableBody">
+              <!-- Skeleton rows shown while loading -->
+              <tr class="skeleton-row">
+                <td><div class="listing-cell">
+                  <div class="listing-thumb" style="background:#e8e8e8;border-radius:8px;"></div>
+                  <div>
+                    <div style="height:12px;width:140px;background:#e8e8e8;border-radius:4px;margin-bottom:6px;animation:pulse 1.6s infinite;"></div>
+                    <div style="height:10px;width:90px;background:#e8e8e8;border-radius:4px;animation:pulse 1.6s infinite;"></div>
+                  </div>
+                </div></td>
+                <td><div style="height:24px;width:64px;background:#e8e8e8;border-radius:50px;animation:pulse 1.6s infinite;"></div></td>
+                <td><div style="height:20px;width:70px;background:#e8e8e8;border-radius:50px;animation:pulse 1.6s infinite;"></div></td>
+                <td><div style="height:14px;width:80px;background:#e8e8e8;border-radius:4px;animation:pulse 1.6s infinite;"></div></td>
+                <td><div style="height:14px;width:40px;background:#e8e8e8;border-radius:4px;animation:pulse 1.6s infinite;"></div></td>
+                <td><div style="height:28px;width:80px;background:#e8e8e8;border-radius:8px;animation:pulse 1.6s infinite;"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty state (hidden by default, shown if no listings) -->
+        <div class="empty-state" id="listingsEmptyState" style="display:none;">
+          <div class="empty-state-icon">🏠</div>
+          <h3>No listings yet</h3>
+          <p>Add your first property listing and start reaching thousands of renters across Kenya.</p>
+          <a href="add-listing.html" class="btn-dark">
+            + Add Your First Listing
+          </a>
+        </div>
+      </div>
+
+      <!-- ── BOTTOM GRID: Boosters + Activity ── -->
+      <div class="dash-bottom-grid">
+
+        <!-- Boosters -->
+        <div class="dash-panel">
+          <div class="dash-section-header">
+            <h2 class="dash-section-title">Boost a Listing</h2>
+            <a href="pricing.html" style="font-size:13px;color:var(--accent);font-weight:500;">See all →</a>
+          </div>
+          <div class="boosters-grid">
+
+            <div class="booster-card" onclick="window.location='pricing.html'">
+              <div class="booster-icon orange">🏷️</div>
+              <div class="booster-info">
+                <h4>Homepage Feature</h4>
+                <p>Pin your listing on the homepage for 7 days</p>
+              </div>
+            </div>
+
+            <div class="booster-card" onclick="window.location='pricing.html'">
+              <div class="booster-icon gold">⭐</div>
+              <div class="booster-info">
+                <h4>Chatbot Priority</h4>
+                <p>AI recommends your listing first to visitors</p>
+              </div>
+            </div>
+
+            <div class="booster-card" onclick="window.location='pricing.html'">
+              <div class="booster-icon green">🔄</div>
+              <div class="booster-info">
+                <h4>Refresh Listing</h4>
+                <p>Bump your listing back to the top of search</p>
+              </div>
+            </div>
+
+            <div class="booster-card" onclick="window.location='pricing.html'">
+              <div class="booster-icon blue">📅</div>
+              <div class="booster-info">
+                <h4>Extend Visibility</h4>
+                <p>Keep your listing highlighted for 30 more days</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="dash-panel">
+          <div class="dash-section-header">
+            <h2 class="dash-section-title">Recent Activity</h2>
+          </div>
+          <div class="activity-list" id="activityList">
+            <!-- Populated by JS -->
+            <div class="empty-state" style="padding:32px 0;">
+              <div class="empty-state-icon">📭</div>
+              <h3 style="font-size:15px;">No activity yet</h3>
+              <p style="font-size:13px;">Enquiries and listing events will show up here.</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /dash-bottom-grid -->
+
+      <!-- Profile completion panel -->
+      <div class="dash-panel" id="profileCompletionPanel">
+        <div class="dash-section-header">
+          <h2 class="dash-section-title">Complete Your Profile</h2>
+          <span style="font-size:13px;color:var(--muted);" id="profilePct">60% done</span>
+        </div>
+        <div class="profile-progress-bar">
+          <div class="profile-progress-fill" id="profileFill" style="width:60%;"></div>
+        </div>
+        <div class="profile-steps">
+          <div class="profile-step">
+            <div class="profile-step-check done">✓</div>
+            <span class="done-text">Account created</span>
+          </div>
+          <div class="profile-step">
+            <div class="profile-step-check done">✓</div>
+            <span class="done-text">Phone number verified</span>
+          </div>
+          <div class="profile-step">
+            <div class="profile-step-check done">✓</div>
+            <span class="done-text">First listing added</span>
+          </div>
+          <div class="profile-step" id="photoStep">
+            <div class="profile-step-check todo">○</div>
+            <span>Add a profile photo</span>
+          </div>
+          <div class="profile-step" id="paymentStep">
+            <div class="profile-step-check todo">○</div>
+            <span>Payment method saved</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /dash-content -->
+
+  </div><!-- /dash-layout -->
+
+
+  <!-- =============================================
+       FOOTER (minimal for dashboard)
+       ============================================= -->
+  <footer style="background:var(--dark);padding:24px 0;border-top:1px solid rgba(255,255,255,0.06);">
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <a href="index.html" class="logo" style="gap:8px;">
+        <span class="logo-mark" style="width:28px;height:28px;font-size:16px;">M</span>
+        <span class="logo-text" style="font-size:20px;">Makao</span>
+      </a>
+      <p style="font-size:13px;color:rgba(255,255,255,0.3);">© 2025 Makao. All rights reserved.</p>
+      <div style="display:flex;gap:20px;">
+        <a href="#" style="font-size:13px;color:rgba(255,255,255,0.4);transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Privacy</a>
+        <a href="#" style="font-size:13px;color:rgba(255,255,255,0.4);transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Terms</a>
+        <a href="listings.html" style="font-size:13px;color:rgba(255,255,255,0.4);transition:color 0.2s;" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Browse Listings</a>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- =============================================
+       SCRIPTS
+       ============================================= -->
+  <script src="js/main.js"></script>
+
+  <script>
+    /* =============================================
+       dashboard.js — inline (no extra file needed)
+
+       On a real backend all data comes from
+       GET /api/host/dashboard  (JWT protected).
+       Here we use mock data + localStorage for
+       the demo / initial build.
+       ============================================= */
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+      /* ── 1. Auth guard ── */
+      const token = localStorage.getItem('makao_token');
+      // In production: redirect to login if no token
+      // if (!token) { window.location.href = 'login.html'; return; }
+
+      /* ── 2. Mock host object (replace with API call) ──
+         In production:
+         const res = await fetch('/api/host/me', {
+           headers: { Authorization: `Bearer ${token}` }
+         });
+         const host = await res.json();
+      */
+      const host = {
+        full_name:   'James Kariuki',
+        first_name:  'James',
+        email:       'james@kariuki.co.ke',
+        host_type:   'agency',        // 'landlord' or 'agency'
+        plan_status: 'active',
+        member_since:'Jan 2024',
+        initials:    'JK',
+      };
+
+      /* ── 3. Mock stats (replace with API) ── */
+      const stats = {
+        listings:  3,
+        views:     1240,
+        enquiries: 8,
+        featured:  1,
+      };
+
+      /* ── 4. Mock listings (replace with API) ── */
+      const listings = [
+        {
+          id: 1,
+          title: '3-Bedroom Apartment in Kilimani',
+          location: 'Kilimani, Nairobi',
+          status: 'live',
+          package_type: 'agency',
+          price_per_month: 75000,
+          views: 842,
+          photo: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=120&q=70',
+        },
+        {
+          id: 2,
+          title: 'Modern Studio in Westlands',
+          location: 'Westlands, Nairobi',
+          status: 'live',
+          package_type: 'agency',
+          price_per_month: 28000,
+          views: 318,
+          photo: 'https://images.unsplash.com/photo-1560448204-603b3fc33ddc?auto=format&fit=crop&w=120&q=70',
+        },
+        {
+          id: 3,
+          title: '4-Bed Maisonette, Karen',
+          location: 'Karen, Nairobi',
+          status: 'pending',
+          package_type: 'agency',
+          price_per_month: 150000,
+          views: 80,
+          photo: 'https://images.unsplash.com/photo-1571055107559-3e67626fa8be?auto=format&fit=crop&w=120&q=70',
+        },
+      ];
+
+      /* ── 5. Mock activity ── */
+      const activity = [
+        { type: 'green',  msg: '<strong>New enquiry</strong> on 3-Bedroom Kilimani', time: '2 hours ago' },
+        { type: 'orange', msg: '<strong>Listing live:</strong> Modern Studio in Westlands', time: '1 day ago' },
+        { type: 'blue',   msg: '<strong>842 views</strong> on your Kilimani apartment', time: '3 days ago' },
+        { type: 'muted',  msg: '<strong>Payment confirmed</strong> — Agency package', time: '5 days ago' },
+      ];
+
+      /* ── Render: navbar & hero ── */
+      const firstName = host.full_name.split(' ')[0];
+      document.getElementById('heroHostName').textContent    = firstName;
+      document.getElementById('navHostName').textContent     = host.full_name;
+      document.getElementById('navAvatar').textContent       = host.initials;
+      document.getElementById('heroMemberSince').textContent = host.member_since;
+      document.getElementById('heroListingsCount').textContent = stats.listings;
+      document.getElementById('heroViewsCount').textContent   = stats.views.toLocaleString();
+
+      // Agency badge
+      if (host.host_type === 'agency') {
+        document.getElementById('heroAgencyBadge').style.display = 'inline-flex';
+        document.getElementById('agencyOnlyBadge').style.display  = 'inline-flex';
+      }
+
+      /* ── Render: stat cards (animated counter) ── */
+      animateCounter('statListings',  stats.listings,  0,  700);
+      animateCounter('statViews',     stats.views,     0, 1200);
+      animateCounter('statEnquiries', stats.enquiries, 0,  900);
+      animateCounter('statFeatured',  stats.featured,  0,  600);
+
+      /* ── Render: sidebar badge ── */
+      document.getElementById('sidebarListingsBadge').textContent = stats.listings;
+
+      /* ── Render: listings table ── */
+      const tbody = document.getElementById('listingsTableBody');
+
+      if (listings.length === 0) {
+        document.getElementById('listingsTableWrap').style.display = 'none';
+        document.getElementById('listingsEmptyState').style.display = 'flex';
+      } else {
+        tbody.innerHTML = listings.map(l => `
+          <tr>
+            <td>
+              <div class="listing-cell">
+                <div class="listing-thumb">
+                  <img src="${l.photo}" alt="${l.title}" loading="lazy" />
+                </div>
+                <div>
+                  <p class="listing-cell-title">${l.title}</p>
+                  <p class="listing-cell-loc">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    ${l.location}
+                  </p>
+                </div>
+              </div>
+            </td>
+            <td><span class="status-pill ${l.status}">${capitalize(l.status)}</span></td>
+            <td><span class="pkg-badge ${l.package_type}">${capitalize(l.package_type)}</span></td>
+            <td style="font-weight:500;">KES ${l.price_per_month.toLocaleString()}/mo</td>
+            <td style="color:var(--mid);">${l.views.toLocaleString()}</td>
+            <td>
+              <div class="row-actions">
+                <button class="row-action-btn" title="Edit listing" onclick="window.location='add-listing.html?id=${l.id}'">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="row-action-btn" title="View listing" onclick="window.location='listing.html?id=${l.id}'">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+                <button class="row-action-btn danger" title="Delete listing" onclick="confirmDelete(${l.id})">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      /* ── Render: activity feed ── */
+      const actEl = document.getElementById('activityList');
+      if (activity.length > 0) {
+        actEl.innerHTML = activity.map(a => `
+          <div class="activity-item">
+            <div class="activity-dot-wrap">
+              <span class="activity-dot ${a.type}"></span>
+            </div>
+            <div class="activity-body">
+              <p>${a.msg}</p>
+              <p class="activity-time">${a.time}</p>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      /* ── Hero bg zoom on load ── */
+      setTimeout(() => {
+        const bg = document.getElementById('dashHeroBg');
+        if (bg) bg.classList.add('loaded');
+      }, 100);
+
+      /* ── Notification dot (example: if has pending listing) ── */
+      if (listings.some(l => l.status === 'pending')) {
+        document.getElementById('navNotifDot').style.display = 'block';
+      }
+
+      /* ── Profile completion ── */
+      // example: 3/5 steps done
+      const pct = 60;
+      document.getElementById('profileFill').style.width = pct + '%';
+      document.getElementById('profilePct').textContent  = pct + '% done';
+
+    }); // end DOMContentLoaded
+
+
+    /* ── Helpers ── */
+
+    function animateCounter(id, target, start, duration) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      let startTime = null;
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        const ease     = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        el.textContent = Math.floor(ease * (target - start) + start).toLocaleString();
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = target.toLocaleString();
+      }
+      requestAnimationFrame(step);
+    }
+
+    function capitalize(str) {
+      return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+    }
+
+    function confirmDelete(listingId) {
+      if (confirm('Are you sure you want to delete this listing? This cannot be undone.')) {
+        // In production: DELETE /api/listings/:id with JWT header
+        alert('Listing deleted. (Connect to backend to persist.)');
+      }
+    }
+
+    function scrollToListings(e) {
+      e.preventDefault();
+      const el = document.getElementById('my-listings');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  </script>
+
+</body>
+</html>

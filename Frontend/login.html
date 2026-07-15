@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Host Portal — Makao</title>
+  
+  <!-- Global Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── RESET & TRUE BLACK DESIGN SYSTEM (IMAGE_344147.PNG) ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-black:      #000000;          /* True black from image_344147.png */
+      --input-bg:      #0b0e14;          /* Deep dark input backgrounds */
+      --border-dim:    #1f242f;          /* Subtle layout lines */
+      --white:         #ffffff;
+      --text-main:     #ffffff;
+      --text-muted:    #7e8693;
+      --brand-orange:  #c8522a;          /* Custom operational accents */
+      --error:         #f06464;
+      --success:         #46cf76;
+      --radius-pill:   50px;             /* Pill fields from image_344147.png */
+      --radius-panel:  16px;
+    }
+
+    body {
+      background-color: var(--bg-black);
+      color: var(--text-main);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── NEW: HERO IMAGE BANNER SECTION ── */
+    .hero-banner {
+      position: relative;
+      width: 100%;
+      height: 380px;                    /* Perfect balance overhead height */
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 32px 40px;
+    }
+    .hero-bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 35%;
+      z-index: 0;
+    }
+    /* Ambient gradient overlay transitioning perfectly into true black page space */
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.7) 60%,
+        var(--bg-black) 100%
+      );
+      z-index: 1;
+    }
+
+    /* ── MINIMAL TOP NAVIGATION HEADER (LAYERED ON HERO) ── */
+    .top-header {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .brand-mark {
+      background: var(--brand-orange);
+      color: var(--white);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 8px;
+    }
+    .brand-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -0.5px;
+    }
+    .exit-link {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .exit-link:hover { color: var(--white); }
+
+    /* Hero Text Content Statement */
+    .hero-statement {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+      text-align: center;
+      padding-bottom: 8px;
+    }
+    .hero-title {
+      font-size: 32px;
+      font-weight: 500;
+      color: var(--white);
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .hero-tagline {
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+
+    /* ── CENTERED INTERACTIVE CONTAINER ── */
+    .form-wrapper {
+      width: 100%;
+      max-width: 540px; /* Exact functional sizing from image_344147.png */
+      padding: 40px 24px;
+    }
+
+    /* Tab Switcher Layout Lines */
+    .tab-navigation {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border-dim);
+      padding-bottom: 8px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      padding-bottom: 8px;
+      position: relative;
+    }
+    .tab-btn.active {
+      color: var(--white);
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -9px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--brand-orange);
+    }
+
+    /* ── FORM PANES CONTROLLER ── */
+    .form-pane { display: none; }
+    .form-pane.active { display: block; }
+
+    /* ── INPUT FIELD TYPOGRAPHY & ELEMENTS (IMAGE_344147.PNG) ── */
+    .form-group {
+      margin-bottom: 24px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--white);
+      margin-bottom: 12px;
+    }
+    .input-wrapper {
+      position: relative;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"] {
+      width: 100%;
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-pill); /* Capsules matching image_344147.png */
+      padding: 16px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--white);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input::placeholder {
+      color: var(--text-muted);
+    }
+    input:focus {
+      border-color: #3f4756;
+    }
+    input.invalid {
+      border-color: var(--error);
+    }
+
+    /* Password Display Mask Button */
+    .password-toggle {
+      position: absolute;
+      right: 24px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+    }
+    .password-toggle:hover { color: var(--white); }
+    .password-toggle svg { width: 20px; height: 20px; }
+
+    /* Registration Options Configuration Grid */
+    .account-type-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .radio-card input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .radio-card-ui {
+      background: var(--input-bg);
+      border: 1px solid var(--border-dim);
+      padding: 14px 20px;
+      border-radius: var(--radius-pill);
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .radio-card input:checked + .radio-card-ui {
+      border-color: var(--white);
+      color: var(--white);
+    }
+
+    /* ── HIGH CONTRAST PILL ACTION BUTTON ── */
+    .action-button {
+      width: 100%;
+      background-color: var(--white);  /* Stark white element directly following image_344147.png style */
+      color: var(--bg-black);
+      border: none;
+      border-radius: var(--radius-pill);
+      padding: 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 12px;
+      transition: opacity 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+    }
+    .action-button:hover {
+      opacity: 0.9;
+    }
+    .action-button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      display: none;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(0,0,0,0.1);
+      border-top-color: var(--bg-black);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    .action-button.loading .btn-text { display: none; }
+    .action-button.loading .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Verification Errors */
+    .error-lbl {
+      font-size: 13px;
+      color: var(--error);
+      margin-top: 6px;
+      padding-left: 20px;
+      display: none;
+    }
+    .error-lbl.visible { display: block; }
+
+    .banner-alert {
+      background: #110707;
+      border: 1px solid rgba(240, 100, 100, 0.2);
+      color: var(--error);
+      border-radius: var(--radius-panel);
+      padding: 14px 20px;
+      font-size: 14px;
+      margin-bottom: 24px;
+      display: none;
+    }
+    .banner-alert.visible { display: block; }
+
+    /* ── VALUES BLOCK (REPLICATING THE LOWER LIST IN IMAGE_344147.PNG) ── */
+    .features-panel {
+      margin-top: 56px;
+      border-top: 1px solid var(--border-dim);
+      padding-top: 40px;
+      text-align: center;
+    }
+    .features-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--white);
+      margin-bottom: 24px;
+    }
+    .features-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .features-list li {
+      font-size: 15px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .features-list li::before {
+      content: "•";
+      color: #38bdf8; /* Soft blue bullet point signature accent */
+      font-size: 18px;
+    }
+    .features-list ul {
+      list-style: none;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .forgot-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    .forgot-link:hover { color: var(--white); }
+
+    /* Quick responsiveness scaling for small mobile viewpoints */
+    @media (max-width: 600px) {
+      .hero-banner { height: 260px; padding: 20px; }
+      .hero-title { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════ BRAND HERO UPPER HEADER BANNER ════════ -->
+  <section class="hero-banner">
+    <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80" alt="Premium Modern Architectural Context" class="hero-bg-img" />
+    <div class="hero-overlay"></div>
+
+    <header class="top-header">
+      <a href="index.html" class="brand-logo">
+        <div class="brand-mark">M</div>
+        <span class="brand-name">Makao</span>
+      </a>
+      <a href="index.html" class="exit-link">Back</a>
+    </header>
+
+    <div class="hero-statement">
+      <h2 class="hero-title">Host Management Portal</h2>
+      <p class="hero-tagline">Access tools to manage your listings across Kenya</p>
+    </div>
+  </section>
+
+  <!-- ════════ CENTERED DESIGN CONTENT INTERFACE ════════ -->
+  <main class="form-wrapper">
+
+    <!-- Tab Switching Panel -->
+    <div class="tab-navigation" role="tablist">
+      <button class="tab-btn active" role="tab" onclick="toggleView('login')" id="tab-login">Host Log In</button>
+      <button class="tab-btn" role="tab" onclick="toggleView('signup')" id="tab-signup">Register Account</button>
+    </div>
+
+    <!-- ── FORM ACCESS PANELS: SIGN IN ── -->
+    <div class="form-pane active" id="pane-login">
+      <div class="banner-alert" id="login-global-err"></div>
+
+      <div class="form-group">
+        <label for="login-email">Email Address</label>
+        <div class="input-wrapper">
+          <input type="email" id="login-email" placeholder="your.email@domain.com" autocomplete="email" />
+        </div>
+        <div class="error-lbl" id="err-login-email">Provide a structured profile email location.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="login-pass">Password</label>
+        <div class="input-wrapper">
+          <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" />
+          <button type="button" class="password-toggle" onclick="toggleMask('login-pass', this)" aria-label="Toggle password view">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </button>
+        </div>
+        <div class="error-lbl" id="err-login-pass">Password entry cannot be omitted.</div>
+        <a href="forgot-password.html" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <button class="action-button" id="btn-login" onclick="executeLogin()">
+        <span class="btn-text">Log In Now</span>
+        <div class="spinner"></div>
+      </button>
+      <a href="dashboard.html">Dashboard</a>
+    </div>
+
+    <!-- ── FORM ACCESS PANELS: SIGN UP ── -->
+    <div class="form-pane" id="pane-signup">
+      <div class="banner-alert" id="signup-global-err"></div>
+
+      <div class="form-group">
+        <label>Account Setup Model</label>
+        <div class="account-type-row">
+          <label class="radio-card">
+            <input type="radio" name="host_type" value="landlord" checked />
+            <div class="radio-card-ui">Individual Owner</div>
+          </label>
+          <label class="radio-card">
+            <input type="radio" name="host_type" value="agency" />
+            <div class="radio-card-ui">Commercial Agency</div>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="signup-name">Full Name / Entity Name</label>
+        <div class="input-wrapper">
+          <input type="text" id="signup-name" placeholder="Your full name" autocomplete="name" />
+        </div>
+        <div class="error-lbl" id="err-signup-name">Please identify your profile identity.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="signup-email">Email Address</label>
+        <div class="input-wrapper">
+          <input type="email" id="signup-email" placeholder="your.email@domain.com" autocomplete="email" />
+        </div>
+        <div class="error-lbl" id="err-signup-email">Enter a valid email structure pattern.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="signup-phone">Phone Number (For Billing Synchronizations)</label>
+        <div class="input-wrapper">
+          <input type="tel" id="signup-phone" placeholder="e.g. 07XXXXXXXX" autocomplete="tel" />
+        </div>
+        <div class="error-lbl" id="err-signup-phone">Provide an authentic Kenyan mobile layout series.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="signup-pass">Create Security Password</label>
+        <div class="input-wrapper">
+          <input type="password" id="signup-pass" placeholder="Minimum 8 elements" autocomplete="new-password" />
+          <button type="button" class="password-toggle" onclick="toggleMask('signup-pass', this)" aria-label="Toggle password view">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </button>
+        </div>
+        <div class="error-lbl" id="err-signup-pass">Password structure must hit an 8-character floor minimum.</div>
+      </div>
+
+      <button class="action-button" id="btn-signup" onclick="executeSignup()">
+        <span class="btn-text">Join Now</span>
+        <div class="spinner"></div>
+      </button>
+    </div>
+
+    <!-- ── VALUES BLOCK (REPLICATING THE LOWER LIST IN IMAGE_344147.PNG) ── -->
+    <section class="features-panel">
+      <h3 class="features-title">What you'll get:</h3>
+      <ul class="features-list">
+        <li>Direct verification linkages across all 47 Kenyan counties
+          <ul>
+            <li>Instant listing publishing updates</li>
+            <li>Direct inquiries routed immediately straight to you</li>
+          </ul>
+        </li>
+        <li>Zero agent commissions or overhead margins</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <script>
+    // Tab Layout Toggler Engine
+    function toggleView(paneKey) {
+      document.querySelectorAll('.form-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      
+      document.getElementById('pane-' + paneKey).classList.add('active');
+      document.getElementById('tab-' + paneKey).classList.add('active');
+      clearErrorTraces();
+    }
+
+    // Input Protection Mask Visibility Toggle
+    function toggleMask(fieldId, elementRef) {
+      const inputEl = document.getElementById(fieldId);
+      const reveals = inputEl.type === 'password';
+      inputEl.type = reveals ? 'text' : 'password';
+      
+      elementRef.innerHTML = reveals 
+        ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 11-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
+    }
+
+    // Validation Engine Core
+    function flagValidationError(inputId, labelId) {
+      document.getElementById(inputId).classList.add('invalid');
+      document.getElementById(labelId).classList.add('visible');
+    }
+
+    function clearErrorTraces() {
+      document.querySelectorAll('input').forEach(i => i.classList.remove('invalid'));
+      document.querySelectorAll('.error-lbl').forEach(l => l.classList.remove('visible'));
+      document.querySelectorAll('.banner-alert').forEach(a => a.classList.remove('visible'));
+    }
+
+    function testEmailFormat(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+    function testPhoneFormat(phone) {
+      const parsed = phone.replace(/\s/g, '');
+      return /^(07|01|2547|2541|\+2547|\+2541)\d{7,8}$/.test(parsed);
+    }
+
+    // Authentication Request Handling
+    async function executeLogin() {
+      clearErrorTraces();
+      const mail = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-pass').value;
+      let valid = true;
+
+      if (!testEmailFormat(mail)) { flagValidationError('login-email', 'err-login-email'); valid = false; }
+      if (!pass) { flagValidationError('login-pass', 'err-login-pass'); valid = false; }
+      if (!valid) return;
+
+      const btn = document.getElementById('btn-login');
+      btn.classList.add('loading');
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: mail, password: pass })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('access_token', data.access_token);
+          window.location.href = 'dashboard.html';
+        } else {
+          const container = document.getElementById('login-global-err');
+          container.textContent = data.detail || 'Authorization failed. Validate inputs.';
+          container.classList.add('visible');
+        }
+      } catch (err) {
+        const container = document.getElementById('login-global-err');
+        container.textContent = 'Server response terminal timed out.';
+        container.classList.add('visible');
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    }
+
+    // Registration Account Submission Handling
+    async function executeSignup() {
+      clearErrorTraces();
+      const name = document.getElementById('signup-name').value.trim();
+      const mail = document.getElementById('signup-email').value.trim();
+      const phone = document.getElementById('signup-phone').value.trim();
+      const pass = document.getElementById('signup-pass').value;
+      const type = document.querySelector('input[name="host_type"]:checked').value;
+      let valid = true;
+
+      if (name.length < 2) { flagValidationError('signup-name', 'err-signup-name'); valid = false; }
+      if (!testEmailFormat(mail)) { flagValidationError('signup-email', 'err-signup-email'); valid = false; }
+      if (!testPhoneFormat(phone)) { flagValidationError('signup-phone', 'err-signup-phone'); valid = false; }
+      if (pass.length < 8) { flagValidationError('signup-pass', 'err-signup-pass'); valid = false; }
+      if (!valid) return;
+
+      const btn = document.getElementById('btn-signup');
+      btn.classList.add('loading');
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ full_name: name, email: mail, phone: phone, password: pass, host_type: type })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('access_token', data.access_token);
+          window.location.href = 'dashboard.html';
+        } else {
+          const container = document.getElementById('signup-global-err');
+          container.textContent = data.detail || 'Account generation structure limits error.';
+          container.classList.add('visible');
+        }
+      } catch (err) {
+        const container = document.getElementById('signup-global-err');
+        container.textContent = 'Network infrastructure boundary reached.';
+        container.classList.add('visible');
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    }
+
+    // Capture Enter key submission events
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      if (document.getElementById('pane-login').classList.contains('active')) executeLogin();
+      else executeSignup();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Listing Detail — Makao</title>
+  <meta name="description" content="View full property details, photos, amenities and contact the host directly on Makao." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Leaflet — OpenStreetMap -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    /* =============================================
+       listing.html — Single Property Detail Page
+       Background: #ffffff
+       ============================================= */
+
+    /* ── Page Shell ── */
+    .listing-page {
+      padding-top: var(--nav-h);
+      background: var(--white);
+      min-height: 100vh;
+    }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+    }
+    .breadcrumb-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .breadcrumb-inner a {
+      color: var(--muted);
+      transition: color var(--transition);
+    }
+    .breadcrumb-inner a:hover { color: var(--accent); }
+    .breadcrumb-inner span { color: var(--border); }
+    .breadcrumb-current { color: var(--dark); font-weight: 500; }
+
+    /* ── Gallery ── */
+    .gallery-section {
+      background: var(--white);
+      padding: 32px 0 0;
+    }
+    .gallery-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .listing-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 50px;
+    }
+    .badge-agency  { background: var(--green);  color: var(--white); }
+    .badge-featured{ background: #b5860d;        color: var(--white); }
+    .badge-avail   { background: #e8f5ee;        color: #1a7a4a; }
+    .badge-new     { background: rgba(200,82,42,0.1); color: var(--accent); border: 1px solid rgba(200,82,42,0.25); }
+
+    .listing-main-title {
+      font-family: var(--font-display);
+      font-size: clamp(30px, 4vw, 48px);
+      color: var(--dark);
+      letter-spacing: 0.5px;
+      line-height: 1.05;
+      margin-bottom: 8px;
+    }
+    .listing-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .listing-meta-row .loc-icon { color: var(--accent); }
+    .meta-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--border); }
+
+    .gallery-actions {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      color: var(--dark);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 9px 16px;
+      border-radius: 50px;
+      transition: border-color var(--transition), background var(--transition), color var(--transition);
+      font-family: var(--font-body);
+    }
+    .action-btn:hover { border-color: var(--dark); background: var(--off-white); }
+    .action-btn.active { background: #fff0eb; border-color: var(--accent); color: var(--accent); }
+
+    /* Photo grid */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-rows: 260px 260px;
+      gap: 6px;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .photo-grid .photo-main { grid-row: 1 / 3; }
+    .photo-slot {
+      position: relative;
+      overflow: hidden;
+      background: var(--off-white);
+      cursor: pointer;
+    }
+    .photo-slot img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+    .photo-slot:hover img { transform: scale(1.04); }
+
+    .show-all-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(17,17,17,0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      font-size: 13px;
+      font-weight: 500;
+      gap: 7px;
+      transition: background var(--transition);
+    }
+    .show-all-overlay:hover { background: rgba(17,17,17,0.7); }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(0,0,0,0.94);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .lightbox.open { opacity: 1; pointer-events: all; }
+    .lightbox-inner {
+      position: relative;
+      max-width: 1100px;
+      width: 95%;
+      max-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 82vh;
+      border-radius: var(--radius);
+      object-fit: contain;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: -48px; right: 0;
+      color: rgba(255,255,255,0.7);
+      font-size: 28px;
+      padding: 8px;
+      transition: color var(--transition);
+    }
+    .lightbox-close:hover { color: var(--white); }
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.12);
+      color: var(--white);
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition);
+      backdrop-filter: blur(8px);
+    }
+    .lightbox-nav:hover { background: rgba(255,255,255,0.22); }
+    .lightbox-prev { left: -58px; }
+    .lightbox-next { right: -58px; }
+    .lightbox-counter {
+      position: absolute;
+      bottom: -36px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+    }
+
+    /* ── Body Layout: 2-col ── */
+    .listing-body { padding: 44px 0 80px; }
+    .listing-layout {
+      display: grid;
+      grid-template-columns: 1fr 370px;
+      gap: 56px;
+      align-items: flex-start;
+    }
+
+    /* Quick stats strip */
+    .quick-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+    .quick-stat {
+      flex: 1;
+      min-width: 100px;
+      padding: 18px 20px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .quick-stat:last-child { border-right: none; }
+    .qs-icon { font-size: 20px; margin-bottom: 6px; display: block; }
+    .qs-value {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--dark);
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+    .qs-label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+
+    /* Section divider */
+    .detail-section {
+      padding-bottom: 36px;
+      margin-bottom: 36px;
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .detail-section-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: var(--dark);
+      letter-spacing: 0.3px;
+      margin-bottom: 16px;
+    }
+    .detail-text { font-size: 15px; color: var(--mid); line-height: 1.75; }
+    .detail-text p + p { margin-top: 12px; }
+
+    .show-more-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dark);
+      border-bottom: 1.5px solid var(--dark);
+      padding-bottom: 1px;
+      margin-top: 14px;
+      transition: color var(--transition), border-color var(--transition);
+      font-family: var(--font-body);
+    }
+    .show-more-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* Amenities grid */
+    .amenities-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .amenity-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--dark);
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .amenity-item:hover { border-color: var(--accent); background: #fff8f5; }
+    .amenity-icon { font-size: 18px; flex-shrink: 0; }
+    .amenity-unavailable { opacity: 0.35; }
+    .amenity-unavailable .amenity-name { text-decoration: line-through; }
+
+    /* Host profile strip */
+    .host-strip {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 24px;
+      background: var(--off-white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .host-avatar-placeholder {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: var(--charcoal);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: var(--white);
+      border: 2px solid var(--white);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .host-info { flex: 1; }
+    .host-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 2px; }
+    .host-name { font-size: 17px; font-weight: 500; color: var(--dark); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .host-since { font-size: 13px; color: var(--muted); }
+    .host-message-btn {
+      background: var(--dark);
+      color: var(--white);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 50px;
+      transition: background var(--transition);
+      font-family: var(--font-body);
+    }
+    .host-message-btn:hover { background: var(--charcoal); }
+
+    /* Similar listings */
+    .similar-section { margin-top: 56px; padding-top: 48px; border-top: 1px solid var(--border); }
+    .similar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+
+    /* ── RIGHT COLUMN — Sticky Card ── */
+    .booking-card {
+      position: sticky;
+      top: calc(var(--nav-h) + 24px);
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      transition: box-shadow var(--transition);
+    }
+    .booking-card:hover { box-shadow: var(--shadow-hover); }
+
+    .bc-price-row { padding: 28px 28px 20px; border-bottom: 1px solid var(--border); }
+    .bc-price {
+      font-family: var(--font-display);
+      font-size: 38px;
+      color: var(--dark);
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+    .bc-price-period { font-family: var(--font-body); font-size: 14px; color: var(--muted); font-weight: 400; }
+    .bc-price-note { font-size: 12px; color: var(--muted); margin-top: 5px; }
+    .bc-avail-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--green);
+      background: #e8f5ee;
+      padding: 4px 12px;
+      border-radius: 50px;
+      margin-top: 10px;
+    }
+    .bc-avail-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
+
+    .bc-details { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px; }
+    .bc-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+    .bc-row-label { color: var(--muted); display: flex; align-items: center; gap: 7px; }
+    .bc-row-value { font-weight: 500; color: var(--dark); }
+
+    .bc-cta { padding: 20px 28px; display: flex; flex-direction: column; gap: 10px; }
+    .bc-btn-primary {
+      display: block;
+      background: var(--accent);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 500;
+      padding: 15px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      transition: background var(--transition), transform var(--transition);
+      border: none;
+      cursor: pointer;
+      width: 100%;
+    }
+    .bc-btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
+    .bc-btn-secondary {
+      display: block;
+      background: var(--off-white);
+      color: var(--dark);
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      transition: background var(--transition);
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      width: 100%;
+    }
+    .bc-btn-secondary:hover { background: var(--border); }
+
+    .bc-trust { padding: 0 28px 20px; display: flex; flex-direction: column; gap: 8px; }
+    .trust-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .trust-item svg { color: var(--green); flex-shrink: 0; }
+
+    .bc-footer {
+      padding: 16px 28px;
+      background: var(--off-white);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .bc-footer a { color: var(--muted); transition: color var(--transition); }
+    .bc-footer a:hover { color: var(--dark); }
+    .bc-footer-divider { color: var(--border); }
+
+    /* ── Contact Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 400;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      padding: 24px;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 36px;
+      max-width: 480px;
+      width: 100%;
+      transform: translateY(16px) scale(0.98);
+      transition: transform 0.25s ease;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+    }
+    .modal-overlay.open .modal-box { transform: translateY(0) scale(1); }
+    .modal-close-btn { float: right; color: var(--muted); padding: 4px; transition: color var(--transition); }
+    .modal-close-btn:hover { color: var(--dark); }
+    .modal-title { font-family: var(--font-display); font-size: 30px; color: var(--dark); margin-bottom: 6px; letter-spacing: 0.3px; clear: both; }
+    .modal-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--dark); margin-bottom: 7px; }
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      font-size: 14px;
+      font-family: var(--font-body);
+      color: var(--dark);
+      outline: none;
+      transition: border-color var(--transition);
+      background: var(--white);
+    }
+    .form-group input:focus,
+    .form-group textarea:focus { border-color: var(--accent); }
+    .form-group textarea { resize: vertical; min-height: 100px; }
+    .form-submit {
+      width: 100%;
+      background: var(--accent);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+      margin-top: 8px;
+    }
+    .form-submit:hover { background: var(--accent-light); transform: translateY(-1px); }
+    .modal-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 12px; }
+
+    /* ── Navbar override for non-hero pages ── */
+    .navbar-dark {
+      background: var(--dark) !important;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* ── Toast notification ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--dark);
+      color: var(--white);
+      padding: 14px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 600;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+      white-space: nowrap;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* ── Fullscreen map overlay ── */
+    .map-fullscreen-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 450;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .map-fullscreen-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .map-fs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--dark);
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .map-fs-address {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--white);
+    }
+    .map-fs-hint {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 2px;
+    }
+    .map-fs-close {
+      color: rgba(255,255,255,0.7);
+      padding: 8px 14px;
+      border-radius: 8px;
+      transition: color var(--transition), background var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-family: var(--font-body);
+    }
+    .map-fs-close:hover {
+      color: var(--white);
+      background: rgba(255,255,255,0.1);
+    }
+    #mapFullscreen {
+      flex: 1;
+      width: 100%;
+    }
+    /* Double-click hint pill shown on the inline map */
+    .map-dblclick-hint {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17,17,17,0.72);
+      color: rgba(255,255,255,0.88);
+      font-size: 11px;
+      padding: 5px 14px;
+      border-radius: 50px;
+      pointer-events: none;
+      z-index: 1000;
+      white-space: nowrap;
+      backdrop-filter: blur(6px);
+      transition: opacity 0.6s ease;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .listing-layout { grid-template-columns: 1fr 340px; gap: 36px; }
+    }
+    @media (max-width: 900px) {
+      .listing-layout { grid-template-columns: 1fr; }
+      .booking-card { position: static; }
+      .photo-grid { grid-template-columns: 1fr 1fr; grid-template-rows: 220px 220px; }
+      .photo-grid .photo-main { grid-row: 1 / 2; grid-column: 1 / 3; }
+    }
+    @media (max-width: 640px) {
+      .photo-grid { grid-template-columns: 1fr; grid-template-rows: 240px 140px 140px; }
+      .photo-grid .photo-main { grid-column: 1; grid-row: 1; }
+      .quick-stats { flex-direction: column; }
+      .quick-stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .quick-stat:last-child { border-bottom: none; }
+      .gallery-actions { display: none; }
+      .lightbox-prev { left: -10px; }
+      .lightbox-next { right: -10px; }
+      .host-strip { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ NAVBAR (always dark on non-hero pages) ══ -->
+  <nav class="navbar navbar-dark" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">Makao</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="listings.html">Rent</a></li>
+        <li><a href="listings.html?type=featured">Featured</a></li>
+        <li><a href="pricing.html">List Property</a></li>
+        <li><a href="index.html#how-it-works">How It Works</a></li>
+      </ul>
+      <div class="nav-auth">
+        <a href="login.html" class="btn-ghost">Become a Host</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="listings.html">Rent</a></li>
+      <li><a href="listings.html?type=featured">Featured</a></li>
+      <li><a href="pricing.html">List Property</a></li>
+      <li><a href="index.html#how-it-works">How It Works</a></li>
+      <li><a href="login.html">Become a Host</a></li>
+    </ul>
+  </div>
+
+  <div class="listing-page">
+
+    <!-- ── BREADCRUMB ── -->
+    <div class="breadcrumb">
+      <div class="container">
+        <div class="breadcrumb-inner">
+          <a href="index.html">Home</a>
+          <span>›</span>
+          <a href="listings.html">Listings</a>
+          <span>›</span>
+          <a href="listings.html?county=nairobi" id="breadcrumbCounty">Nairobi</a>
+          <span>›</span>
+          <span class="breadcrumb-current" id="breadcrumbTitle">Loading…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GALLERY SECTION ── -->
+    <section class="gallery-section">
+      <div class="container">
+        <div class="gallery-header">
+          <div>
+            <div class="listing-badges" id="listingBadges"></div>
+            <h1 class="listing-main-title" id="listingTitle">Loading…</h1>
+            <div class="listing-meta-row">
+              <svg class="loc-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span id="metaLocation">—</span>
+              <span class="meta-sep"></span>
+              <span id="metaPosted">—</span>
+              <span class="meta-sep"></span>
+              <span id="metaViews">—</span>
+            </div>
+          </div>
+          <div class="gallery-actions">
+            <button class="action-btn" id="shareBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Share
+            </button>
+            <button class="action-btn" id="saveBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              <span id="saveBtnLabel">Save</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Photo grid -->
+        <div class="photo-grid" id="photoGrid">
+          <div class="photo-slot photo-main">
+            <img src="" alt="Main property photo" id="photoMain" onerror="this.src='https://placehold.co/900x540/e5e5e5/888888?text=No+Photo'" />
+          </div>
+          <div class="photo-slot" id="photoSlot1">
+            <img src="" alt="Property photo 2" id="photoImg1" onerror="this.src='https://placehold.co/440x260/ede9e4/aaa?text=Photo'" />
+          </div>
+          <div class="photo-slot" id="photoSlot2">
+            <img src="" alt="Property photo 3" id="photoImg2" onerror="this.src='https://placehold.co/440x260/ede9e4/aaa?text=Photo'" />
+          </div>
+          <div class="photo-slot" id="photoSlot3">
+            <img src="" alt="Property photo 4" id="photoImg3" onerror="this.src='https://placehold.co/440x260/ede9e4/aaa?text=Photo'" />
+          </div>
+          <div class="photo-slot" id="photoSlot4">
+            <img src="" alt="Property photo 5" id="photoImg4" onerror="this.src='https://placehold.co/440x260/ede9e4/aaa?text=Photo'" />
+            <div class="show-all-overlay" id="showAllOverlay" onclick="openLightbox(0)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span id="showAllLabel">Show all photos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── BODY ── -->
+    <div class="listing-body">
+      <div class="container">
+        <div class="listing-layout">
+
+          <!-- ════ LEFT COLUMN ════ -->
+          <div class="listing-left">
+
+            <!-- Quick stats -->
+            <div class="quick-stats">
+              <div class="quick-stat">
+                <span class="qs-icon">🛏</span>
+                <span class="qs-value" id="statBeds">—</span>
+                <span class="qs-label">Bedrooms</span>
+              </div>
+              <div class="quick-stat">
+                <span class="qs-icon">🚿</span>
+                <span class="qs-value" id="statBaths">—</span>
+                <span class="qs-label">Bathrooms</span>
+              </div>
+              <div class="quick-stat">
+                <span class="qs-icon">📐</span>
+                <span class="qs-value" id="statSize">—</span>
+                <span class="qs-label">Sq. Feet</span>
+              </div>
+              <div class="quick-stat">
+                <span class="qs-icon">📦</span>
+                <span class="qs-value" id="statType">—</span>
+                <span class="qs-label">Type</span>
+              </div>
+              <div class="quick-stat">
+                <span class="qs-icon">🏢</span>
+                <span class="qs-value" id="statFloor">—</span>
+                <span class="qs-label">Floor</span>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="detail-section">
+              <h2 class="detail-section-title">About this property</h2>
+              <div class="detail-text" id="descriptionText">
+                <p>Loading description…</p>
+              </div>
+              <button class="show-more-btn" id="showMoreDesc" style="display:none;">
+                Show more
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </div>
+
+            <!-- Amenities -->
+            <div class="detail-section">
+              <h2 class="detail-section-title">Amenities & features</h2>
+              <div class="amenities-grid" id="amenitiesGrid"></div>
+            </div>
+
+            <!-- Location — OpenStreetMap via Leaflet -->
+            <div class="detail-section">
+              <h2 class="detail-section-title">Location</h2>
+              <p class="detail-text" style="margin-bottom:16px;" id="fullAddress">—</p>
+              <div id="mapPlaceholder" style="width:100%; height:300px; border-radius:var(--radius); border:1.5px solid var(--border); overflow:hidden;"></div>
+            </div>
+
+            <!-- Host info -->
+            <div class="detail-section">
+              <h2 class="detail-section-title">Listed by</h2>
+              <div class="host-strip">
+                <div class="host-avatar-placeholder" id="hostAvatar">H</div>
+                <div class="host-info">
+                  <p class="host-label">Host</p>
+                  <p class="host-name">
+                    <span id="hostName">—</span>
+                    <span id="hostBadge"></span>
+                  </p>
+                  <p class="host-since" id="hostSince">Member since —</p>
+                </div>
+                <button class="host-message-btn" onclick="openContactModal()">Message host</button>
+              </div>
+            </div>
+
+            <!-- Similar listings -->
+            <div class="similar-section">
+              <div class="section-header" style="margin-bottom:28px;">
+                <div>
+                  <p class="section-eyebrow">You might also like</p>
+                  <h2 class="section-title" style="font-size:32px;">Similar Properties</h2>
+                </div>
+                <a href="listings.html" class="see-all-btn">
+                  View all
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
+              </div>
+              <div class="similar-grid" id="similarListings"></div>
+            </div>
+
+          </div><!-- /listing-left -->
+
+          <!-- ════ RIGHT COLUMN — Booking Card ════ -->
+          <div class="listing-right">
+            <div class="booking-card">
+
+              <!-- Price -->
+              <div class="bc-price-row">
+                <div class="bc-price">
+                  KES <span id="bcPrice">—</span>
+                  <span class="bc-price-period">/ month</span>
+                </div>
+                <p class="bc-price-note" id="bcDeposit">—</p>
+                <div class="bc-avail-badge" id="bcAvailBadge">
+                  <span class="bc-avail-dot"></span>
+                  Available now
+                </div>
+              </div>
+
+              <!-- Details summary -->
+              <div class="bc-details">
+                <div class="bc-row">
+                  <span class="bc-row-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Location
+                  </span>
+                  <span class="bc-row-value" id="bcLocation">—</span>
+                </div>
+                <div class="bc-row">
+                  <span class="bc-row-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    Bedrooms
+                  </span>
+                  <span class="bc-row-value" id="bcBeds">—</span>
+                </div>
+                <div class="bc-row">
+                  <span class="bc-row-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    Size
+                  </span>
+                  <span class="bc-row-value" id="bcSize">—</span>
+                </div>
+                <div class="bc-row">
+                  <span class="bc-row-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    Package
+                  </span>
+                  <span class="bc-row-value" id="bcPackage">—</span>
+                </div>
+              </div>
+
+              <!-- CTAs -->
+              <div class="bc-cta">
+                <button class="bc-btn-primary" onclick="openContactModal()">Contact Host</button>
+                <button class="bc-btn-secondary" onclick="openChatbot()">🤖 Ask AI about this listing</button>
+              </div>
+
+              <!-- Trust signals -->
+              <div class="bc-trust">
+                <div class="trust-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Listing verified by Makao
+                </div>
+                <div class="trust-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  No commission — contact host directly
+                </div>
+                <div class="trust-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Payments in KES
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="bc-footer">
+                <a href="#" onclick="shareListing(); return false;">Share listing</a>
+                <span class="bc-footer-divider">·</span>
+                <a href="#" onclick="reportListing(); return false;">Report issue</a>
+              </div>
+
+            </div>
+          </div><!-- /listing-right -->
+
+        </div><!-- /listing-layout -->
+      </div><!-- /container -->
+    </div><!-- /listing-body -->
+
+  </div><!-- /listing-page -->
+
+  <!-- ══ FOOTER ══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="logo footer-logo">
+            <span class="logo-mark">M</span>
+            <span class="logo-text">Makao</span>
+          </a>
+          <p class="footer-tagline">Kenya's premier home rental platform. Find your makao today.</p>
+          <div class="footer-socials">
+            <a href="#" aria-label="Twitter/X">𝕏</a>
+            <a href="#" aria-label="Instagram">IG</a>
+            <a href="#" aria-label="Facebook">FB</a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>For Renters</h4>
+          <ul>
+            <li><a href="listings.html">Browse Listings</a></li>
+            <li><a href="listings.html?type=featured">Featured Homes</a></li>
+            <li><a href="index.html#how-it-works">How It Works</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>For Hosts</h4>
+          <ul>
+            <li><a href="pricing.html">Pricing & Packages</a></li>
+            <li><a href="login.html">Create Account</a></li>
+            <li><a href="login.html">Host Login</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="#">About Makao</a></li>
+            <li><a href="#">Contact Us</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 Makao. All rights reserved. Payments powered by M-Pesa & Stripe.</p>
+        <p class="footer-legal">All amounts in Kenya Shillings (KES).</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ══ CHATBOT FAB ══ -->
+  <div class="chatbot-fab" id="chatbotFab" aria-label="Open AI assistant">
+    <div class="fab-inner">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <span class="fab-label">AI search</span>
+    <span class="fab-pulse"></span>
+  </div>
+
+  <div class="chatbot-drawer" id="chatbotDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title-row">
+        <div class="drawer-avatar">🏠</div>
+        <div>
+          <p class="drawer-name">Makao AI</p>
+          <p class="drawer-status">● Online — ready to help</p>
+        </div>
+      </div>
+      <button class="drawer-close" id="drawerClose" aria-label="Close chat">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-messages" id="drawerMessages">
+      <div class="msg bot-msg">
+        <p>Habari! 👋 I'm your Makao AI assistant. Tell me what kind of home you're looking for and I'll find the best options for you.</p>
+        <p style="margin-top:8px; font-size:13px; opacity:0.7;">You can type in English or Swahili.</p>
+      </div>
+      <div class="chat-suggestions">
+        <button class="suggestion-chip" onclick="sendSuggestion(this)">Is this property still available?</button>
+        <button class="suggestion-chip" onclick="sendSuggestion(this)">Find similar homes in this area</button>
+        <button class="suggestion-chip" onclick="sendSuggestion(this)">What's included in the rent?</button>
+      </div>
+    </div>
+    <div class="drawer-input-row">
+      <input type="text" id="chatInput" placeholder="Ask about this listing…" autocomplete="off" />
+      <button id="chatSend" aria-label="Send message">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ LIGHTBOX ══ -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-label="Photo gallery">
+    <div class="lightbox-inner">
+      <button class="lightbox-close" onclick="closeLightbox()" aria-label="Close gallery">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <button class="lightbox-nav lightbox-prev" onclick="shiftPhoto(-1)" aria-label="Previous photo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <img class="lightbox-img" id="lightboxImg" src="" alt="Property photo" />
+      <button class="lightbox-nav lightbox-next" onclick="shiftPhoto(1)" aria-label="Next photo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <span class="lightbox-counter" id="lightboxCounter">1 / 1</span>
+    </div>
+  </div>
+
+  <!-- ══ CONTACT MODAL ══ -->
+  <div class="modal-overlay" id="contactModal" role="dialog" aria-label="Contact host">
+    <div class="modal-box">
+      <button class="modal-close-btn" onclick="closeContactModal()" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <h2 class="modal-title">Contact Host</h2>
+      <p class="modal-sub" id="modalHostSub">Send a message directly to the host.</p>
+      <div class="form-group">
+        <label for="contactName">Your Name</label>
+        <input type="text" id="contactName" placeholder="e.g. Amina Wanjiku" />
+      </div>
+      <div class="form-group">
+        <label for="contactPhone">Phone Number</label>
+        <input type="tel" id="contactPhone" placeholder="07XX XXX XXX" />
+      </div>
+      <div class="form-group">
+        <label for="contactMsg">Message</label>
+        <textarea id="contactMsg" placeholder="Hi, I'm interested in this property and would like to arrange a viewing…"></textarea>
+      </div>
+      <button class="form-submit" onclick="submitContact()">Send Message</button>
+      <p class="modal-note">Your contact info is shared only with this host.</p>
+    </div>
+  </div>
+
+  <!-- ══ TOAST ══ -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ══ FULLSCREEN MAP OVERLAY ══ -->
+  <div class="map-fullscreen-overlay" id="mapFullscreenOverlay">
+    <div class="map-fs-header">
+      <div>
+        <div class="map-fs-address" id="mapFsAddress">—</div>
+        <div class="map-fs-hint">Scroll to zoom · Drag to pan</div>
+      </div>
+      <button class="map-fs-close" onclick="closeFullscreenMap()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Close map
+      </button>
+    </div>
+    <div id="mapFullscreen"></div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/chatbot.js"></script>
+  <script>
+    /* =============================================
+       listing.html — Page Script
+       Reads ?id= from URL, fetches from API,
+       populates all sections. Falls back to demo
+       data while backend is not yet connected.
+       ============================================= */
+
+    const API_BASE = '/api';
+
+    // ── State
+    let currentListing = null;
+    let allPhotos      = [];
+    let lightboxIndex  = 0;
+    let isSaved        = false;
+    let descExpanded   = false;
+    const MAX_DESC_CHARS = 320;
+
+    // ── Boot
+    document.addEventListener('DOMContentLoaded', () => {
+      const id = getListingId();
+      if (id) {
+        loadListing(id);
+        loadSimilar(id);
+      } else {
+        // No ?id= in URL — load demo so the page is never blank
+        populatePage(getDemoListing());
+        loadSimilar(null);
+      }
+    });
+
+    /* ══════════════════════════════════════════════
+       HELPERS
+       ============================================== */
+
+    function getListingId() {
+      return new URLSearchParams(window.location.search).get('id');
+    }
+
+    function formatKES(amount) {
+      if (!amount && amount !== 0) return '—';
+      return Number(amount).toLocaleString('en-KE');
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString('en-KE', {
+        day: 'numeric', month: 'short', year: 'numeric'
+      });
+    }
+
+    function timeSince(iso) {
+      if (!iso) return '';
+      const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+      if (days === 0) return 'Posted today';
+      if (days === 1) return 'Posted yesterday';
+      if (days < 30)  return `Posted ${days} days ago`;
+      const months = Math.floor(days / 30);
+      return `Posted ${months} month${months > 1 ? 's' : ''} ago`;
+    }
+
+    function showError(msg) {
+      document.getElementById('listingTitle').textContent       = 'Listing not found';
+      document.getElementById('breadcrumbTitle').textContent    = 'Not found';
+      document.getElementById('descriptionText').innerHTML      = `<p>${msg}</p>`;
+    }
+
+    /* ══════════════════════════════════════════════
+       OPENSTREETMAP — Leaflet map
+       Called from populatePage() after address is set.
+       Falls back to Nairobi CBD if no lat/lng stored.
+       ============================================== */
+    function initMap(lat, lng, location, city, county) {
+      const mapLat = lat  || -1.2921;   // Nairobi CBD fallback
+      const mapLng = lng  || 36.8219;
+
+      // Destroy previous instance to prevent Leaflet double-init error
+      if (window._leafletMap) {
+        window._leafletMap.remove();
+        window._leafletMap = null;
+      }
+
+      const map = L.map('mapPlaceholder', {
+        center: [mapLat, mapLng],
+        zoom: 15,
+        scrollWheelZoom: false   // prevents accidental zoom while scrolling page
+      });
+
+      // OpenStreetMap tile layer — free, no API key required
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      // Branded terracotta pin — matches Makao design system (#c8522a)
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="
+          width:36px; height:36px;
+          background:#c8522a;
+          border-radius:50% 50% 50% 0;
+          transform:rotate(-45deg);
+          border:3px solid #fff;
+          box-shadow:0 4px 12px rgba(200,82,42,0.45);
+        "></div>`,
+        iconSize:    [36, 36],
+        iconAnchor:  [18, 36],
+        popupAnchor: [0, -38]
+      });
+
+      // Place marker and open popup
+      L.marker([mapLat, mapLng], { icon })
+        .addTo(map)
+        .bindPopup(`<strong>${location}</strong><br>${city}, ${county}`)
+        .openPopup();
+
+      window._leafletMap = map;
+
+      // Attach double-click to expand once map is ready
+      attachMapFullscreenTrigger(mapLat, mapLng, location, city, county);
+    }
+
+    /* ══════════════════════════════════════════════
+       LOAD LISTING
+       ============================================== */
+    async function loadListing(id) {
+      try {
+        const res = await fetch(`${API_BASE}/listings/${id}`);
+        if (!res.ok) throw new Error('Not found');
+        const data = await res.json();
+        currentListing = data;
+        populatePage(data);
+      } catch (err) {
+        console.error('Failed to load listing:', err);
+        // Demo fallback — keeps page usable during development
+        populatePage(getDemoListing());
+      }
+    }
+
+    /* ══════════════════════════════════════════════
+       POPULATE PAGE
+       Single function that fills every section.
+       ============================================== */
+    function populatePage(l) {
+      currentListing = l;
+
+      // Browser tab title
+      document.title = `${l.title} — Makao`;
+
+      // Breadcrumb
+      document.getElementById('breadcrumbTitle').textContent = l.title;
+      const countyLink = document.getElementById('breadcrumbCounty');
+      countyLink.textContent = l.county || 'Kenya';
+      countyLink.href = `listings.html?county=${(l.county || '').toLowerCase()}`;
+
+      // Badges
+      renderBadges(l);
+
+      // Title + meta row
+      document.getElementById('listingTitle').textContent = l.title;
+      document.getElementById('metaLocation').textContent = `${l.location}, ${l.city}, ${l.county}`;
+      document.getElementById('metaPosted').textContent   = timeSince(l.created_at);
+      document.getElementById('metaViews').textContent    = l.views ? `${l.views.toLocaleString()} views` : '';
+
+      // Photos
+      allPhotos = Array.isArray(l.photos) ? l.photos : [];
+      renderPhotos(allPhotos);
+
+      // Quick stats
+      document.getElementById('statBeds').textContent  = l.bedrooms === 0 ? 'Bedsitter' : (l.bedrooms  || '—');
+      document.getElementById('statBaths').textContent = l.bathrooms || '—';
+      document.getElementById('statSize').textContent  = l.size_sqft ? l.size_sqft.toLocaleString() : '—';
+      document.getElementById('statType').textContent  = l.house_type || '—';
+      document.getElementById('statFloor').textContent = l.floor || 'G/F';
+
+      // Description
+      renderDescription(l.description || '');
+
+      // Amenities
+      renderAmenities(l.amenities || []);
+
+      // Location — address text + Leaflet map
+      const addr = `${l.location}, ${l.city}, ${l.county} County`;
+      document.getElementById('fullAddress').textContent = addr;
+      initMap(l.latitude, l.longitude, l.location, l.city, l.county);
+
+      // Host strip
+      document.getElementById('hostName').textContent  = l.host_name  || 'Host';
+      document.getElementById('hostAvatar').textContent = (l.host_name || 'H')[0].toUpperCase();
+      document.getElementById('hostSince').textContent  = `Member since ${formatDate(l.host_since)}`;
+      document.getElementById('modalHostSub').textContent = `Send a message to ${l.host_name || 'the host'}.`;
+
+      if (l.host_type === 'agency') {
+        document.getElementById('hostBadge').innerHTML =
+          `<span class="badge badge-agency" style="font-size:10px;padding:2px 8px;">✓ Verified Agency</span>`;
+      }
+
+      // Booking card
+      document.getElementById('bcPrice').textContent   = formatKES(l.price_per_month);
+      document.getElementById('bcDeposit').textContent = 'One month deposit required';
+      document.getElementById('bcLocation').textContent = `${l.city}, ${l.county}`;
+      document.getElementById('bcBeds').textContent    = l.bedrooms === 0 ? 'Bedsitter' : `${l.bedrooms || '—'} bed`;
+      document.getElementById('bcSize').textContent    = l.size_sqft ? `${l.size_sqft.toLocaleString()} sq.ft` : '—';
+      document.getElementById('bcPackage').textContent = l.package_type === 'agency' ? 'Agency' : 'Standard';
+
+      // Availability badge
+      if (!l.is_available) {
+        const badge = document.getElementById('bcAvailBadge');
+        badge.style.background = '#fde8e8';
+        badge.style.color      = '#c0392b';
+        badge.querySelector('.bc-avail-dot').style.background = '#c0392b';
+        badge.lastChild.textContent = ' Not available';
+      }
+    }
+
+    /* ══════════════════════════════════════════════
+       RENDER HELPERS
+       ============================================== */
+
+    function renderBadges(l) {
+      const c = document.getElementById('listingBadges');
+      c.innerHTML = '';
+      if (l.package_type === 'agency' && l.verified_badge) {
+        c.innerHTML += `<span class="badge badge-agency">✓ Verified Agency</span>`;
+      }
+      if (l.is_featured) {
+        c.innerHTML += `<span class="badge badge-featured">★ Featured</span>`;
+      }
+      if (l.is_available) {
+        c.innerHTML += `<span class="badge badge-avail">Available</span>`;
+      }
+      const daysOld = l.created_at
+        ? Math.floor((Date.now() - new Date(l.created_at).getTime()) / 86400000)
+        : 999;
+      if (daysOld < 7) {
+        c.innerHTML += `<span class="badge badge-new">New listing</span>`;
+      }
+    }
+
+    function renderPhotos(photos) {
+      const fallback = 'https://placehold.co/900x540/ede9e4/888888?text=No+Photo';
+      document.getElementById('photoMain').src  = photos[0] || fallback;
+      document.getElementById('photoImg1').src  = photos[1] || fallback;
+      document.getElementById('photoImg2').src  = photos[2] || fallback;
+      document.getElementById('photoImg3').src  = photos[3] || fallback;
+      document.getElementById('photoImg4').src  = photos[4] || fallback;
+
+      document.getElementById('showAllLabel').textContent =
+        photos.length > 5 ? `+${photos.length - 5} more photos` : 'View all photos';
+
+      // Click handlers on grid slots
+      document.getElementById('photoMain').parentElement.onclick = () => openLightbox(0);
+      document.getElementById('photoImg1').parentElement.onclick = () => openLightbox(1);
+      document.getElementById('photoImg2').parentElement.onclick = () => openLightbox(2);
+      document.getElementById('photoImg3').parentElement.onclick = () => openLightbox(3);
+    }
+
+    function renderDescription(text) {
+      const el     = document.getElementById('descriptionText');
+      const btn    = document.getElementById('showMoreDesc');
+      const isLong = text.length > MAX_DESC_CHARS;
+
+      if (isLong) {
+        btn.style.display = 'inline-flex';
+        el.innerHTML      = `<p>${text.substring(0, MAX_DESC_CHARS)}…</p>`;
+        btn.onclick = () => {
+          descExpanded = !descExpanded;
+          el.innerHTML = descExpanded
+            ? text.split('\n').map(p => `<p>${p}</p>`).join('')
+            : `<p>${text.substring(0, MAX_DESC_CHARS)}…</p>`;
+          btn.innerHTML = descExpanded
+            ? `Show less <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`
+            : `Show more <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+        };
+      } else {
+        btn.style.display = 'none';
+        el.innerHTML = text.split('\n').map(p => `<p>${p}</p>`).join('');
+      }
+    }
+
+    function renderAmenities(amenitiesList) {
+      const ALL_AMENITIES = [
+        { key: 'wifi',      label: 'WiFi',               icon: '📶' },
+        { key: 'parking',   label: 'Parking',            icon: '🅿️' },
+        { key: 'security',  label: 'Security',           icon: '🔒' },
+        { key: 'generator', label: 'Backup Power',       icon: '⚡' },
+        { key: 'borehole',  label: 'Borehole Water',     icon: '💧' },
+        { key: 'garden',    label: 'Garden',             icon: '🌿' },
+        { key: 'gym',       label: 'Gym',                icon: '🏋️' },
+        { key: 'pool',      label: 'Swimming Pool',      icon: '🏊' },
+        { key: 'balcony',   label: 'Balcony',            icon: '🏡' },
+        { key: 'lift',      label: 'Elevator/Lift',      icon: '🛗' },
+        { key: 'dsq',       label: 'DSQ / Staff Rm',     icon: '🛖' },
+        { key: 'cctv',      label: 'CCTV',               icon: '📹' },
+        { key: 'garbage',   label: 'Garbage Collection', icon: '🗑️' },
+        { key: 'furnished', label: 'Furnished',          icon: '🛋️' },
+        { key: 'aircon',    label: 'Air Conditioning',   icon: '❄️' },
+        { key: 'pets',      label: 'Pets Allowed',       icon: '🐾' },
+      ];
+
+      const normalised = amenitiesList.map(a => a.toLowerCase().replace(/\s+/g, '_'));
+
+      document.getElementById('amenitiesGrid').innerHTML = ALL_AMENITIES.map(a => {
+        const has = normalised.includes(a.key);
+        return `
+          <div class="amenity-item ${has ? '' : 'amenity-unavailable'}">
+            <span class="amenity-icon">${a.icon}</span>
+            <span class="amenity-name">${a.label}</span>
+            ${has ? '' : '<span style="margin-left:auto;font-size:12px;color:var(--border);">✕</span>'}
+          </div>`;
+      }).join('');
+    }
+
+    /* ══════════════════════════════════════════════
+       SIMILAR LISTINGS
+       ============================================== */
+    async function loadSimilar(id) {
+      try {
+        const res  = await fetch(`${API_BASE}/listings/${id}/similar?limit=3`);
+        const data = res.ok ? await res.json() : getSimilarDemo();
+        renderSimilar(data);
+      } catch {
+        renderSimilar(getSimilarDemo());
+      }
+    }
+
+    function renderSimilar(listings) {
+      const c = document.getElementById('similarListings');
+      if (!listings || !listings.length) {
+        c.innerHTML = '<p style="color:var(--muted);font-size:14px;">No similar listings found.</p>';
+        return;
+      }
+      c.innerHTML = listings.map(l => `
+        <a href="listing.html?id=${l.id}" class="listing-card">
+          <div class="card-photo">
+            <img src="${(l.photos && l.photos[0]) || 'https://placehold.co/640x400/ede9e4/888?text=Photo'}"
+                 alt="${l.title}"
+                 onerror="this.src='https://placehold.co/640x400/ede9e4/888?text=Photo'" />
+            ${l.is_featured ? '<span class="card-badge featured">★ Featured</span>' : ''}
+            ${l.package_type === 'agency' ? '<span class="card-badge verified">✓ Agency</span>' : ''}
+          </div>
+          <div class="card-body">
+            <div class="card-price">KES ${formatKES(l.price_per_month)} <span>/ mo</span></div>
+            <div class="card-title">${l.title}</div>
+            <div class="card-location">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${l.location}, ${l.city}
+            </div>
+            <div class="card-meta">
+              <span class="card-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                ${l.bedrooms === 0 ? 'Bedsitter' : `${l.bedrooms} bed`}
+              </span>
+              <span class="card-meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                ${l.size_sqft ? `${l.size_sqft.toLocaleString()} sqft` : '—'}
+              </span>
+            </div>
+          </div>
+        </a>`).join('');
+    }
+
+    /* ══════════════════════════════════════════════
+       FULLSCREEN MAP
+       Double-click the inline map to expand it.
+       A separate Leaflet instance is created in the
+       overlay and destroyed on close — no memory leaks.
+       ============================================== */
+
+    function attachMapFullscreenTrigger(lat, lng, location, city, county) {
+      const container = document.getElementById('mapPlaceholder');
+
+      // Inject "double-click to expand" hint pill inside the map div
+      const hint = document.createElement('div');
+      hint.className   = 'map-dblclick-hint';
+      hint.id          = 'mapDblHint';
+      hint.textContent = '⛶  Double-click to expand';
+      container.style.position = 'relative'; // ensure hint positions correctly
+      container.appendChild(hint);
+
+      // Fade hint out after 4 seconds
+      setTimeout(() => { hint.style.opacity = '0'; }, 4000);
+
+      // Listen for double-click on the Leaflet map object
+      window._leafletMap.on('dblclick', () => {
+        openFullscreenMap(lat, lng, location, city, county);
+      });
+    }
+
+    function openFullscreenMap(lat, lng, location, city, county) {
+      const overlay = document.getElementById('mapFullscreenOverlay');
+
+      // Populate header address
+      document.getElementById('mapFsAddress').textContent =
+        `${location}, ${city}, ${county} County`;
+
+      // Show overlay
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      // Small delay so the div is painted before Leaflet measures it
+      setTimeout(() => {
+        // Destroy any stale fullscreen instance first
+        if (window._leafletMapFs) {
+          window._leafletMapFs.remove();
+          window._leafletMapFs = null;
+        }
+
+        const fsMap = L.map('mapFullscreen', {
+          center: [lat, lng],
+          zoom: 16,
+          scrollWheelZoom: true   // intentionally ON in fullscreen
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+          maxZoom: 19
+        }).addTo(fsMap);
+
+        // Same branded terracotta pin — slightly larger in fullscreen
+        const icon = L.divIcon({
+          className: '',
+          html: `<div style="
+            width:40px; height:40px;
+            background:#c8522a;
+            border-radius:50% 50% 50% 0;
+            transform:rotate(-45deg);
+            border:3px solid #fff;
+            box-shadow:0 4px 16px rgba(200,82,42,0.5);
+          "></div>`,
+          iconSize:    [40, 40],
+          iconAnchor:  [20, 40],
+          popupAnchor: [0, -42]
+        });
+
+        L.marker([lat, lng], { icon })
+          .addTo(fsMap)
+          .bindPopup(`<strong>${location}</strong><br>${city}, ${county}`)
+          .openPopup();
+
+        window._leafletMapFs = fsMap;
+      }, 80);
+    }
+
+    function closeFullscreenMap() {
+      document.getElementById('mapFullscreenOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+
+      // Destroy fullscreen instance to free memory
+      if (window._leafletMapFs) {
+        window._leafletMapFs.remove();
+        window._leafletMapFs = null;
+      }
+    }
+
+    /* ══════════════════════════════════════════════
+       LIGHTBOX
+       ============================================== */
+    function openLightbox(index) {
+      if (!allPhotos.length) return;
+      lightboxIndex = index;
+      updateLightbox();
+      document.getElementById('lightbox').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function shiftPhoto(dir) {
+      lightboxIndex = (lightboxIndex + dir + allPhotos.length) % allPhotos.length;
+      updateLightbox();
+    }
+
+    function updateLightbox() {
+      document.getElementById('lightboxImg').src =
+        allPhotos[lightboxIndex] || 'https://placehold.co/1100x700/ede9e4/888?text=Photo';
+      document.getElementById('lightboxCounter').textContent =
+        `${lightboxIndex + 1} / ${allPhotos.length}`;
+    }
+
+    document.getElementById('lightbox').addEventListener('click', function(e) {
+      if (e.target === this) closeLightbox();
+    });
+
+    document.addEventListener('keydown', e => {
+      // Lightbox keyboard nav
+      if (document.getElementById('lightbox').classList.contains('open')) {
+        if (e.key === 'ArrowRight') shiftPhoto(1);
+        if (e.key === 'ArrowLeft')  shiftPhoto(-1);
+        if (e.key === 'Escape')     closeLightbox();
+      }
+      // Fullscreen map close
+      if (e.key === 'Escape' &&
+          document.getElementById('mapFullscreenOverlay').classList.contains('open')) {
+        closeFullscreenMap();
+      }
+    });
+
+    /* ══════════════════════════════════════════════
+       CONTACT MODAL
+       ============================================== */
+    function openContactModal() {
+      document.getElementById('contactModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => document.getElementById('contactName').focus(), 280);
+    }
+
+    function closeContactModal() {
+      document.getElementById('contactModal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('contactModal').addEventListener('click', function(e) {
+      if (e.target === this) closeContactModal();
+    });
+
+    async function submitContact() {
+      const name  = document.getElementById('contactName').value.trim();
+      const phone = document.getElementById('contactPhone').value.trim();
+      const msg   = document.getElementById('contactMsg').value.trim();
+
+      if (!name || !phone || !msg) {
+        showToast('Please fill in all fields.');
+        return;
+      }
+
+      const btn = document.querySelector('.form-submit');
+      btn.textContent = 'Sending…';
+      btn.disabled = true;
+
+      try {
+        await fetch(`${API_BASE}/listings/${getListingId()}/contact`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ name, phone, message: msg })
+        });
+      } catch { /* backend not yet live — fail silently */ }
+
+      btn.textContent = 'Send Message';
+      btn.disabled = false;
+      closeContactModal();
+      showToast('✓ Message sent! The host will be in touch soon.');
+
+      document.getElementById('contactName').value = '';
+      document.getElementById('contactPhone').value = '';
+      document.getElementById('contactMsg').value = '';
+    }
+
+    /* ── Save / wishlist ── */
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      isSaved = !isSaved;
+      document.getElementById('saveBtn').classList.toggle('active', isSaved);
+      document.getElementById('saveBtnLabel').textContent = isSaved ? 'Saved' : 'Save';
+      showToast(isSaved ? '♥ Saved to your list' : 'Removed from saved');
+    });
+
+    /* ── Share ── */
+    document.getElementById('shareBtn').addEventListener('click', shareListing);
+
+    function shareListing() {
+      if (navigator.share) {
+        navigator.share({
+          title: currentListing?.title || 'Makao Listing',
+          text:  'Check out this property on Makao',
+          url:   window.location.href
+        }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(window.location.href)
+          .then(()  => showToast('✓ Link copied to clipboard'))
+          .catch(() => showToast('Copy the URL from your address bar'));
+      }
+    }
+
+    function reportListing() {
+      showToast('Report submitted. Thank you for helping keep Makao safe.');
+    }
+
+    /* ── Open chatbot drawer ── */
+    function openChatbot() {
+      document.getElementById('chatbotDrawer').classList.add('open');
+      setTimeout(() => document.getElementById('chatInput').focus(), 280);
+    }
+
+    /* ── Toast ── */
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    /* ══════════════════════════════════════════════
+       DEMO DATA
+       Used as fallback when API is not yet live.
+       Remove once backend is connected.
+       ============================================== */
+    function getDemoListing() {
+      return {
+        id:              1,
+        title:           '3-Bedroom Apartment in Kilimani',
+        description:     `A spacious and modern 3-bedroom apartment nestled in the heart of Kilimani, one of Nairobi's most sought-after residential areas. The property is on the 4th floor of a secure gated development and enjoys stunning views of the Nairobi skyline.\n\nThe apartment features a fully fitted kitchen with granite worktops, a large open-plan living and dining area, en-suite master bedroom, and a wide private balcony. All bedrooms have built-in wardrobes.\n\nThe development includes 24-hour security with CCTV, borehole water, backup generator, and ample parking. The location gives you easy access to Yaya Centre, Adams Arcade, and the Ngong Road corridor. Ideal for professionals and families alike.`,
+        location:        'Kilimani',
+        city:            'Nairobi',
+        county:          'Nairobi',
+        price_per_month: 85000,
+        bedrooms:        3,
+        bathrooms:       2,
+        size_sqft:       1450,
+        house_type:      'Apartment',
+        floor:           '4th',
+        latitude:        -1.2921,    // Kilimani / Nairobi
+        longitude:       36.7836,
+        is_available:    true,
+        is_featured:     true,
+        package_type:    'agency',
+        verified_badge:  true,
+        views:           1247,
+        created_at:      new Date(Date.now() - 3 * 86400000).toISOString(),
+        host_name:       'Prestige Realty Kenya',
+        host_since:      '2022-03-15T00:00:00Z',
+        host_type:       'agency',
+        amenities:       ['wifi','parking','security','generator','borehole','cctv','balcony','garbage'],
+        photos: [
+          'https://placehold.co/900x540/2a2a2a/ffffff?text=Main+Photo',
+          'https://placehold.co/440x260/3a3a3a/ffffff?text=Living+Room',
+          'https://placehold.co/440x260/4a4a4a/ffffff?text=Master+Bedroom',
+          'https://placehold.co/440x260/555555/ffffff?text=Kitchen',
+          'https://placehold.co/440x260/666666/ffffff?text=Bathroom',
+          'https://placehold.co/440x260/777777/ffffff?text=Balcony',
+          'https://placehold.co/440x260/888888/ffffff?text=View',
+        ]
+      };
+    }
+
+    function getSimilarDemo() {
+      return [
+        {
+          id: 2, title: '2-Bedroom Apartment, Lavington',
+          location: 'Lavington', city: 'Nairobi',
+          price_per_month: 65000, bedrooms: 2, bathrooms: 2, size_sqft: 1100,
+          is_featured: false, package_type: 'landlord',
+          photos: ['https://placehold.co/640x400/ede9e4/888888?text=Lavington+Apt']
+        },
+        {
+          id: 3, title: '3-Bed Townhouse, Kileleshwa',
+          location: 'Kileleshwa', city: 'Nairobi',
+          price_per_month: 110000, bedrooms: 3, bathrooms: 3, size_sqft: 1800,
+          is_featured: true, package_type: 'agency',
+          photos: ['https://placehold.co/640x400/e5e0d8/888888?text=Kileleshwa+House']
+        },
+        {
+          id: 4, title: '1-Bedroom Studio, Westlands',
+          location: 'Westlands', city: 'Nairobi',
+          price_per_month: 42000, bedrooms: 1, bathrooms: 1, size_sqft: 650,
+          is_featured: false, package_type: 'landlord',
+          photos: ['https://placehold.co/640x400/ddd8d0/888888?text=Westlands+Studio']
+        }
+      ];
+    }
+  </script>
+</body>
+</html>

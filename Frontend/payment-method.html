@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Choose Payment Method — Makao</title>
+  <meta name="description" content="Choose how you'd like to pay for your Makao listing package." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* =============================================
+       Payment Method Page — Specific Styles
+       ============================================= */
+
+    /* Page layout: always dark navbar (no hero) */
+    .navbar {
+      background: var(--dark);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .payment-page {
+      min-height: 100vh;
+      background: var(--off-white);
+      padding-top: var(--nav-h);
+    }
+
+    /* ===== PROGRESS BREADCRUMB ===== */
+    .progress-bar-wrap {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+    }
+
+    .progress-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      height: 56px;
+    }
+
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .progress-step.done .step-dot {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .progress-step.done .step-dot svg { display: block; }
+    .progress-step.done .step-dot span { display: none; }
+    .progress-step.done { color: var(--mid); }
+
+    .progress-step.active { color: var(--dark); font-weight: 500; }
+    .progress-step.active .step-dot {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--white);
+    }
+
+    .step-dot {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+    .step-dot svg { display: none; width: 13px; height: 13px; stroke: var(--white); }
+
+    .progress-connector {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      margin: 0 10px;
+      min-width: 20px;
+    }
+    .progress-connector.done { background: var(--green); }
+
+    /* ===== MAIN LAYOUT ===== */
+    .pay-layout {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 32px;
+      align-items: start;
+    }
+
+    /* ===== LEFT — PAYMENT SELECTOR ===== */
+    .pay-left {}
+
+    .pay-heading {
+      font-family: var(--font-display);
+      font-size: 38px;
+      letter-spacing: 0.5px;
+      line-height: 1.05;
+      color: var(--dark);
+      margin-bottom: 6px;
+    }
+    .pay-subheading {
+      font-size: 15px;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    /* Payment method cards */
+    .method-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      margin-top: 24px;
+    }
+    .method-label:first-of-type { margin-top: 0; }
+
+    .method-card {
+      background: var(--white);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      cursor: pointer;
+      transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+      margin-bottom: 12px;
+      position: relative;
+      user-select: none;
+    }
+    .method-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 20px rgba(200,82,42,0.12);
+      transform: translateY(-1px);
+    }
+    .method-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(200,82,42,0.1);
+    }
+    .method-card.selected .method-radio { background: var(--accent); border-color: var(--accent); }
+    .method-card.selected .method-radio::after { opacity: 1; }
+
+    /* Recommended tag */
+    .method-card.recommended::before {
+      content: 'Most Popular';
+      position: absolute;
+      top: -1px; right: 18px;
+      background: var(--accent);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 0 0 8px 8px;
+    }
+    .method-card.recommended { border-top-color: var(--accent); }
+
+    .method-radio {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      position: relative;
+      transition: all var(--transition);
+    }
+    .method-radio::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px; height: 8px;
+      background: var(--white);
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .method-icon {
+      width: 48px; height: 48px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 22px;
+    }
+    .method-icon.mpesa-icon { background: #00a14b14; }
+    .method-icon.card-icon  { background: #1a56db14; }
+    .method-icon.paypal-icon { background: #003087 14; background: rgba(0,48,135,0.08); }
+
+    /* M-Pesa logo SVG recreation */
+    .mpesa-logo {
+      font-family: var(--font-display);
+      font-size: 15px;
+      color: #00a14b;
+      letter-spacing: 0.5px;
+    }
+
+    .method-info { flex: 1; }
+    .method-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 3px;
+    }
+    .method-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .method-badges {
+      display: flex;
+      gap: 6px;
+      margin-top: 7px;
+    }
+    .method-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .method-badge.instant { background: #dcfce7; color: #166534; }
+    .method-badge.secure  { background: #dbeafe; color: #1e3a8a; }
+    .method-badge.global  { background: #fef3c7; color: #92400e; }
+
+    /* Payment logos row */
+    .card-logos {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .card-logo-pill {
+      background: var(--off-white);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--mid);
+      letter-spacing: 0.3px;
+    }
+    .card-logo-pill.visa   { color: #1a1f71; }
+    .card-logo-pill.mc     { color: #eb001b; }
+    .card-logo-pill.amex   { color: #007bc1; }
+
+    /* M-Pesa phone input (shown when mpesa selected) */
+    .mpesa-phone-wrap {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, margin-top 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+      margin-top: 0;
+    }
+    .mpesa-phone-wrap.visible {
+      max-height: 120px;
+      opacity: 1;
+      margin-top: 16px;
+    }
+    .mpesa-phone-inner {
+      background: #f0faf4;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+    }
+    .phone-input-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #166534;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .phone-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .phone-prefix {
+      background: var(--white);
+      border: 1.5px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dark);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .phone-input {
+      flex: 1;
+      border: 1.5px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-family: var(--font-body);
+      color: var(--dark);
+      outline: none;
+      background: var(--white);
+      transition: border-color var(--transition);
+    }
+    .phone-input:focus { border-color: #00a14b; }
+    .phone-input::placeholder { color: var(--muted); }
+
+    /* ===== CONTINUE BUTTON ===== */
+    .pay-action {
+      margin-top: 32px;
+    }
+    .btn-pay {
+      width: 100%;
+      background: var(--accent);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-weight: 500;
+      padding: 16px 28px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+      box-shadow: 0 4px 20px rgba(200,82,42,0.3);
+    }
+    .btn-pay:hover {
+      background: var(--accent-light);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(200,82,42,0.4);
+    }
+    .btn-pay:disabled {
+      background: var(--border);
+      color: var(--muted);
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    .btn-pay svg { flex-shrink: 0; }
+
+    .pay-secure-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .pay-secure-note svg { color: var(--green); flex-shrink: 0; }
+
+    /* ===== RIGHT — ORDER SUMMARY ===== */
+    .order-summary {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: sticky;
+      top: calc(var(--nav-h) + 24px);
+    }
+
+    .summary-header {
+      background: var(--dark);
+      padding: 18px 22px;
+    }
+    .summary-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--white);
+      letter-spacing: 0.5px;
+    }
+    .summary-subtitle {
+      font-size: 12px;
+      color: rgba(255,255,255,0.45);
+      margin-top: 2px;
+    }
+
+    .summary-body { padding: 22px; }
+
+    /* Package info */
+    .summary-package {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 18px;
+    }
+    .pkg-icon {
+      width: 44px; height: 44px;
+      background: rgba(200,82,42,0.1);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 20px;
+    }
+    .pkg-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--dark);
+    }
+    .pkg-type {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .pkg-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 5px;
+    }
+    .pkg-badge.agency-badge { background: var(--green); }
+
+    /* What's included */
+    .summary-features { margin-bottom: 18px; }
+    .summary-features-title {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .feature-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--mid);
+      margin-bottom: 7px;
+    }
+    .feature-row svg { color: var(--green); flex-shrink: 0; }
+
+    /* Price breakdown */
+    .price-breakdown {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .price-row.total {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+    .price-val { font-weight: 500; color: var(--dark); }
+    .price-row.total .price-val {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
+    .price-placeholder {
+      color: var(--muted);
+      font-style: italic;
+      font-size: 13px;
+    }
+
+    /* Trust badges */
+    .trust-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .trust-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .trust-badge svg { flex-shrink: 0; }
+
+    /* ===== CHANGE PACKAGE LINK ===== */
+    .change-package {
+      display: block;
+      text-align: center;
+      font-size: 13px;
+      color: var(--accent);
+      margin-top: 12px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color var(--transition);
+    }
+    .change-package:hover { color: var(--accent-light); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 760px) {
+      .pay-layout {
+        grid-template-columns: 1fr;
+        padding: 28px 16px 64px;
+        gap: 24px;
+      }
+      /* Show summary first on mobile */
+      .order-summary { order: -1; position: static; }
+    }
+
+    @media (max-width: 480px) {
+      .pay-heading { font-size: 30px; }
+      .progress-inner { gap: 0; }
+      .progress-step span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">Makao</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="listings.html">Rent</a></li>
+        <li><a href="pricing.html">List Property</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+      </ul>
+      <div class="nav-auth">
+        <a href="dashboard.html" class="btn-ghost">My Dashboard</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="listings.html">Rent</a></li>
+      <li><a href="pricing.html">List Property</a></li>
+      <li><a href="dashboard.html">My Dashboard</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== PROGRESS BAR ===== -->
+  <div class="progress-bar-wrap">
+    <div class="progress-inner">
+
+      <div class="progress-step done" id="step1">
+        <div class="step-dot">
+          <!-- Checkmark when done -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>1</span>
+        </div>
+        <span>Select Package</span>
+      </div>
+
+      <div class="progress-connector done"></div>
+
+      <div class="progress-step active" id="step2">
+        <div class="step-dot"><span>2</span></div>
+        <span>Payment Method</span>
+      </div>
+
+      <div class="progress-connector"></div>
+
+      <div class="progress-step" id="step3">
+        <div class="step-dot"><span>3</span></div>
+        <span>Confirm &amp; Pay</span>
+      </div>
+
+      <div class="progress-connector"></div>
+
+      <div class="progress-step" id="step4">
+        <div class="step-dot"><span>4</span></div>
+        <span>Listing Live</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== PAGE BODY ===== -->
+  <div class="payment-page">
+    <div class="pay-layout">
+
+      <!-- LEFT: Payment Method Selector -->
+      <div class="pay-left">
+        <h1 class="pay-heading">How would you<br />like to pay?</h1>
+        <p class="pay-subheading">All payments are processed securely. Your listing goes live immediately after confirmation.</p>
+
+        <!-- ── Kenyan Payments ── -->
+        <p class="method-label">Kenyan Payments</p>
+
+        <div class="method-card recommended" id="card-mpesa" onclick="selectMethod('mpesa')">
+          <div class="method-radio" id="radio-mpesa"></div>
+          <div class="method-icon mpesa-icon">
+            <span class="mpesa-logo">M</span>
+          </div>
+          <div class="method-info">
+            <div class="method-name">M-Pesa</div>
+            <div class="method-desc">Pay via Safaricom STK Push — enter your number, receive a prompt, enter PIN.</div>
+            <div class="method-badges">
+              <span class="method-badge instant">⚡ Instant</span>
+              <span class="method-badge secure">🔒 Safaricom</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- M-Pesa phone input — expands when selected -->
+        <div class="mpesa-phone-wrap" id="mpesaPhoneWrap">
+          <div class="mpesa-phone-inner">
+            <label class="phone-input-label" for="mpesaPhone">
+              📱 Enter your M-Pesa registered phone number
+            </label>
+            <div class="phone-input-row">
+              <span class="phone-prefix">🇰🇪 +254</span>
+              <input
+                type="tel"
+                class="phone-input"
+                id="mpesaPhone"
+                placeholder="7XX XXX XXX"
+                maxlength="9"
+                pattern="[0-9]{9}"
+                inputmode="numeric"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- ── International Payments ── -->
+        <p class="method-label">International Payments</p>
+
+        <div class="method-card" id="card-card" onclick="selectMethod('card')">
+          <div class="method-radio" id="radio-card"></div>
+          <div class="method-icon card-icon">
+            <!-- Card icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1a56db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+          <div class="method-info">
+            <div class="method-name">Credit / Debit Card</div>
+            <div class="method-desc">Visa, Mastercard, or Amex. Processed securely via Stripe.</div>
+            <div class="card-logos">
+              <span class="card-logo-pill visa">VISA</span>
+              <span class="card-logo-pill mc">MC</span>
+              <span class="card-logo-pill amex">AMEX</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="method-card" id="card-paypal" onclick="selectMethod('paypal')">
+          <div class="method-radio" id="radio-paypal"></div>
+          <div class="method-icon paypal-icon">
+            <!-- PayPal P icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#003087" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11l5-7h4c3 0 4.5 2 3.5 5H14l-1 3H7z"/><path d="M7 11l-2 8h5l1-3h3c3 0 4.5-2 3.5-5"/></svg>
+          </div>
+          <div class="method-info">
+            <div class="method-name">PayPal</div>
+            <div class="method-desc">Pay with your PayPal balance, bank, or linked card. Powered by Stripe.</div>
+            <div class="method-badges">
+              <span class="method-badge global">🌍 International</span>
+              <span class="method-badge secure">🔒 Stripe</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Continue Button -->
+        <div class="pay-action">
+          <button class="btn-pay" id="continueBtn" onclick="handleContinue()" disabled>
+            Continue to Payment
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+          <p class="pay-secure-note">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Your payment is encrypted and 100% secure. Listing activates only after successful payment.
+          </p>
+        </div>
+
+      </div><!-- /pay-left -->
+
+      <!-- RIGHT: Order Summary -->
+      <aside class="order-summary" id="orderSummary">
+        <div class="summary-header">
+          <p class="summary-title">Order Summary</p>
+          <p class="summary-subtitle">Review your package before paying</p>
+        </div>
+        <div class="summary-body">
+
+          <!-- Package details — populated by JS from URL params -->
+          <div class="summary-package">
+            <div class="pkg-icon" id="pkgIcon">🏠</div>
+            <div>
+              <div class="pkg-name" id="pkgName">Landlord Package</div>
+              <div class="pkg-type" id="pkgType">Standard • 1 listing</div>
+              <span class="pkg-badge" id="pkgBadge">Landlord</span>
+            </div>
+          </div>
+
+          <!-- What's included -->
+          <div class="summary-features">
+            <p class="summary-features-title">What's included</p>
+            <div id="featuresList">
+              <!-- Populated by JS based on package type -->
+            </div>
+          </div>
+
+          <!-- Price -->
+          <div class="price-breakdown">
+            <div class="price-row">
+              <span>Package fee</span>
+              <span class="price-val price-placeholder" id="priceDisplay">Set by owner</span>
+            </div>
+            <div class="price-row" id="boosterRow" style="display:none;">
+              <span id="boosterLabel">Booster</span>
+              <span class="price-val price-placeholder">Set by owner</span>
+            </div>
+            <div class="price-row" style="margin-bottom:0;">
+              <span>Currency</span>
+              <span class="price-val">KES</span>
+            </div>
+            <div class="price-row total">
+              <span>Total due</span>
+              <span class="price-val price-placeholder" id="totalDisplay">—</span>
+            </div>
+          </div>
+
+          <!-- Trust badges -->
+          <div class="trust-row">
+            <span class="trust-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              SSL Secured
+            </span>
+            <span class="trust-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              One-time fee
+            </span>
+            <span class="trust-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              No recurring charges
+            </span>
+            <span class="trust-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Instant activation
+            </span>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </div><!-- /payment-page -->
+
+  <!-- ===== FOOTER (minimal) ===== -->
+  <footer style="background:var(--dark); padding:28px 0; border-top:1px solid rgba(255,255,255,0.07);">
+    <div class="container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">Makao</span>
+      </a>
+      <p style="font-size:13px; color:rgba(255,255,255,0.3);">© 2025 Makao · All amounts in KES · Payments by M-Pesa &amp; Stripe</p>
+      <div style="display:flex; gap:20px;">
+        <a href="#" style="font-size:12px; color:rgba(255,255,255,0.35); transition:color 0.2s;">Privacy</a>
+        <a href="#" style="font-size:12px; color:rgba(255,255,255,0.35); transition:color 0.2s;">Terms</a>
+        <a href="#" style="font-size:12px; color:rgba(255,255,255,0.35); transition:color 0.2s;">Help</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="js/main.js"></script>
+  <script>
+    /*
+     * payment-method.html — Client logic
+     * =====================================
+     * Reads ?package=landlord|agency&booster=homepage_feature|etc from URL
+     * Populates order summary from URL params (prices come from backend/config.py)
+     * Routes to correct payment page on continue
+     */
+
+    // ── State ──
+    let selectedMethod = null;
+
+    // ── Package feature definitions (UI display only — prices from backend) ──
+    const PACKAGE_FEATURES = {
+      landlord: {
+        name: 'Landlord Package',
+        type: 'Standard · 1 Listing',
+        icon: '🏠',
+        badge: 'Landlord',
+        badgeClass: '',
+        features: [
+          '1 active listing',
+          'Up to 10 photos',
+          'Standard visibility',
+          'AI chatbot included',
+          'Direct contact from renters',
+        ]
+      },
+      agency: {
+        name: 'Agency Package',
+        type: 'Premium · Up to 10 Listings',
+        icon: '🏢',
+        badge: 'Agency',
+        badgeClass: 'agency-badge',
+        features: [
+          'Up to 10 active listings',
+          'Unlimited photos per listing',
+          'Top visibility in search',
+          'AI chatbot priority',
+          'Featured on homepage',
+          'Verified Agency badge',
+          'Real-time analytics dashboard',
+        ]
+      }
+    };
+
+    const BOOSTER_LABELS = {
+      homepage_feature: 'Homepage Feature (7 days)',
+      chatbot_priority: 'Chatbot Priority Boost',
+      refresh_listing: 'Listing Refresh',
+      extend_visibility: 'Extend Visibility (30 days)',
+    };
+
+    // ── Read URL params ──
+    function getParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        package: params.get('package') || 'landlord',
+        booster: params.get('booster') || null,
+        listing_id: params.get('listing_id') || null,
+      };
+    }
+
+    // ── Populate order summary ──
+    function populateSummary() {
+      const { package: pkg, booster } = getParams();
+      const data = PACKAGE_FEATURES[pkg] || PACKAGE_FEATURES.landlord;
+
+      // Package info
+      document.getElementById('pkgIcon').textContent = data.icon;
+      document.getElementById('pkgName').textContent = data.name;
+      document.getElementById('pkgType').textContent = data.type;
+
+      const badge = document.getElementById('pkgBadge');
+      badge.textContent = data.badge;
+      badge.className = 'pkg-badge ' + (data.badgeClass || '');
+
+      // Features list
+      const list = document.getElementById('featuresList');
+      list.innerHTML = data.features.map(f => `
+        <div class="feature-row">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          ${f}
+        </div>
+      `).join('');
+
+      // Booster row
+      if (booster && BOOSTER_LABELS[booster]) {
+        const row = document.getElementById('boosterRow');
+        row.style.display = 'flex';
+        document.getElementById('boosterLabel').textContent = BOOSTER_LABELS[booster];
+      }
+
+      // Prices: always loaded from backend — show placeholder
+      // Actual amounts are fetched from /api/pricing endpoint at payment confirmation
+      document.getElementById('priceDisplay').textContent = 'See below';
+      document.getElementById('totalDisplay').textContent = 'KES —';
+    }
+
+    // ── Method selection ──
+    function selectMethod(method) {
+      // Clear all
+      ['mpesa', 'card', 'paypal'].forEach(m => {
+        document.getElementById('card-' + m).classList.remove('selected');
+        document.getElementById('radio-' + m).classList.remove('selected'); // handled by CSS via parent
+      });
+
+      // Hide M-Pesa input
+      document.getElementById('mpesaPhoneWrap').classList.remove('visible');
+
+      // Select new
+      selectedMethod = method;
+      document.getElementById('card-' + method).classList.add('selected');
+
+      // Show M-Pesa phone field
+      if (method === 'mpesa') {
+        document.getElementById('mpesaPhoneWrap').classList.add('visible');
+        setTimeout(() => document.getElementById('mpesaPhone').focus(), 320);
+      }
+
+      // Enable continue button
+      document.getElementById('continueBtn').disabled = false;
+
+      // Update button label
+      const labels = {
+        mpesa:  'Send M-Pesa Request',
+        card:   'Continue to Card Payment',
+        paypal: 'Continue to PayPal',
+      };
+      document.getElementById('continueBtn').childNodes[0].textContent = labels[method] + ' ';
+    }
+
+    // ── Handle continue button ──
+    function handleContinue() {
+      if (!selectedMethod) return;
+
+      const { package: pkg, booster, listing_id } = getParams();
+      const base = `?package=${pkg}${booster ? '&booster=' + booster : ''}${listing_id ? '&listing_id=' + listing_id : ''}`;
+
+      if (selectedMethod === 'mpesa') {
+        // Validate phone number before proceeding
+        const phone = document.getElementById('mpesaPhone').value.trim();
+        if (!phone || phone.length < 9) {
+          document.getElementById('mpesaPhone').focus();
+          document.getElementById('mpesaPhone').style.borderColor = '#ef4444';
+          document.getElementById('mpesaPhone').placeholder = 'Please enter your phone number';
+          setTimeout(() => {
+            document.getElementById('mpesaPhone').style.borderColor = '';
+          }, 2500);
+          return;
+        }
+        // Route to M-Pesa payment page with phone number
+        window.location.href = `payment-mpesa.html${base}&phone=254${phone}`;
+
+      } else if (selectedMethod === 'card') {
+        // Route to Stripe card checkout page
+        // Backend creates a Stripe Checkout session, frontend redirects
+        initiateStripeCheckout(pkg, booster, listing_id, 'card');
+
+      } else if (selectedMethod === 'paypal') {
+        // Route to Stripe PayPal flow
+        initiateStripeCheckout(pkg, booster, listing_id, 'paypal');
+      }
+    }
+
+    // ── Stripe Checkout initiation ──
+    // Calls backend to create a Stripe Checkout session, then redirects
+    async function initiateStripeCheckout(pkg, booster, listing_id, provider) {
+      const btn = document.getElementById('continueBtn');
+      btn.disabled = true;
+      btn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.8s linear infinite"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+        Redirecting to ${provider === 'paypal' ? 'PayPal' : 'Stripe'}...
+      `;
+
+      try {
+        // NOTE: Backend endpoint /api/payments/stripe/create-session
+        // Returns { checkout_url: "https://checkout.stripe.com/..." }
+        const token = localStorage.getItem('makao_token');
+        const res = await fetch('/api/payments/stripe/create-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            package_type: pkg,
+            booster_type: booster || null,
+            listing_id: listing_id || null,
+            payment_provider: provider,  // 'card' or 'paypal'
+            success_url: window.location.origin + '/payment-success.html',
+            cancel_url: window.location.origin + '/payment-failed.html',
+          })
+        });
+
+        if (!res.ok) throw new Error('Failed to create checkout session');
+        const data = await res.json();
+
+        // Redirect to Stripe Checkout
+        window.location.href = data.checkout_url;
+
+      } catch (err) {
+        console.error('Stripe session error:', err);
+        btn.disabled = false;
+        btn.innerHTML = `Continue to Payment <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`;
+
+        // Show error toast
+        showToast('Something went wrong. Please try again.', 'error');
+      }
+    }
+
+    // ── Simple toast notification ──
+    function showToast(message, type = 'info') {
+      const existing = document.getElementById('toastNotif');
+      if (existing) existing.remove();
+
+      const toast = document.createElement('div');
+      toast.id = 'toastNotif';
+      toast.style.cssText = `
+        position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+        background: ${type === 'error' ? '#ef4444' : 'var(--dark)'};
+        color: #fff; padding: 12px 24px; border-radius: 50px;
+        font-size: 14px; font-family: var(--font-body);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        z-index: 999; animation: toastIn 0.3s ease both;
+      `;
+      toast.textContent = message;
+
+      const style = document.createElement('style');
+      style.textContent = `@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } } @keyframes spin { to { transform: rotate(360deg); } }`;
+      document.head.appendChild(style);
+      document.body.appendChild(toast);
+
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    // ── Auth guard: redirect to login if not authenticated ──
+    function checkAuth() {
+      const token = localStorage.getItem('makao_token');
+      if (!token) {
+        // Preserve intended destination in redirect param
+        const dest = encodeURIComponent(window.location.href);
+        window.location.href = `login.html?redirect=${dest}`;
+      }
+    }
+
+    // ── Phone number formatting ──
+    document.addEventListener('DOMContentLoaded', () => {
+      // Auth check
+      checkAuth();
+
+      // Populate summary from URL params
+      populateSummary();
+
+      // Auto-select M-Pesa as default (most common for Kenyan market)
+      // Commented out intentionally — user should consciously choose
+      // selectMethod('mpesa');
+
+      // Phone input — numbers only, max 9 digits
+      const phoneInput = document.getElementById('mpesaPhone');
+      phoneInput.addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 9);
+        // Reset error state on input
+        this.style.borderColor = '';
+      });
+
+      // Format hint
+      phoneInput.addEventListener('focus', function () {
+        if (!this.value) this.placeholder = '712 345 678';
+      });
+      phoneInput.addEventListener('blur', function () {
+        if (!this.value) this.placeholder = '7XX XXX XXX';
+      });
+
+      // Allow pressing Enter on phone input to continue
+      phoneInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleContinue();
+      });
+    });
+  </script>
+
+</body>
+</html>

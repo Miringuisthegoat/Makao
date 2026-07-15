@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Billing & Payments — Makao</title>
+  <meta name="description" content="View your payment history and manage billing on Makao." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* =============================================
+       Billing Page — Specific Styles
+       ============================================= */
+
+    /* Page uses #f7f6f3 background (off-white) */
+    body { background: var(--off-white); }
+
+    /* ===== FIXED DARK NAVBAR (non-hero page) ===== */
+    .navbar {
+      background: var(--dark) !important;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* ===== PAGE LAYOUT ===== */
+    .page-wrapper {
+      display: flex;
+      min-height: 100vh;
+      padding-top: var(--nav-h);
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      position: sticky;
+      top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-profile {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: var(--white);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .sidebar-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 2px;
+    }
+    .sidebar-type {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sidebar-badge {
+      background: var(--green);
+      color: var(--white);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 50px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-nav {
+      padding: 16px 12px;
+      flex: 1;
+    }
+    .sidebar-nav-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 8px 12px 6px;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--mid);
+      transition: background var(--transition), color var(--transition);
+      margin-bottom: 2px;
+    }
+    .sidebar-link:hover { background: var(--off-white); color: var(--dark); }
+    .sidebar-link.active {
+      background: rgba(200,82,42,0.1);
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .sidebar-link svg { flex-shrink: 0; opacity: 0.7; }
+    .sidebar-link.active svg { opacity: 1; }
+
+    .sidebar-footer {
+      padding: 16px 12px;
+      border-top: 1px solid var(--border);
+    }
+    .sidebar-logout {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--muted);
+      transition: background var(--transition), color var(--transition);
+      width: 100%;
+    }
+    .sidebar-logout:hover { background: #fff0ed; color: #c0392b; }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content {
+      flex: 1;
+      padding: 40px 48px;
+      max-width: 1000px;
+    }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+      margin-bottom: 36px;
+    }
+    .page-header h1 {
+      font-family: var(--font-display);
+      font-size: 44px;
+      color: var(--dark);
+      letter-spacing: 0.5px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .page-header p {
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    /* ===== BILLING SUMMARY CARDS ===== */
+    .billing-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .summary-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--border);
+    }
+    .summary-card.accent-top::before { background: var(--accent); }
+    .summary-card.green-top::before  { background: var(--green); }
+    .summary-card.gold-top::before   { background: #b5860d; }
+
+    .summary-label {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .summary-value {
+      font-family: var(--font-display);
+      font-size: 38px;
+      color: var(--dark);
+      letter-spacing: 0.5px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .summary-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .summary-icon {
+      position: absolute;
+      top: 20px; right: 20px;
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .summary-icon.orange { background: rgba(200,82,42,0.1); color: var(--accent); }
+    .summary-icon.green  { background: rgba(26,122,74,0.1); color: var(--green); }
+    .summary-icon.gold   { background: rgba(181,134,13,0.1); color: #b5860d; }
+
+    /* ===== SECTION TITLE ===== */
+    .section-label {
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: var(--dark);
+      letter-spacing: 0.3px;
+      margin-bottom: 18px;
+    }
+
+    /* ===== FILTER ROW ===== */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-pill {
+      padding: 8px 18px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1.5px solid var(--border);
+      color: var(--mid);
+      background: var(--white);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-family: var(--font-body);
+    }
+    .filter-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-pill.active {
+      background: var(--dark);
+      border-color: var(--dark);
+      color: var(--white);
+    }
+    .filter-spacer { flex: 1; }
+    .export-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--mid);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-family: var(--font-body);
+    }
+    .export-btn:hover { border-color: var(--dark); color: var(--dark); }
+
+    /* ===== PAYMENTS TABLE ===== */
+    .table-wrap {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead th {
+      padding: 14px 20px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      background: var(--off-white);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafaf8; }
+    tbody td {
+      padding: 16px 20px;
+      font-size: 14px;
+      color: var(--dark);
+      vertical-align: middle;
+    }
+
+    /* Transaction ID */
+    .tx-id {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--off-white);
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Package pill */
+    .pkg-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 50px;
+    }
+    .pkg-pill.landlord {
+      background: rgba(200,82,42,0.1);
+      color: var(--accent);
+    }
+    .pkg-pill.agency {
+      background: rgba(26,122,74,0.1);
+      color: var(--green);
+    }
+    .pkg-pill.booster {
+      background: rgba(181,134,13,0.1);
+      color: #b5860d;
+    }
+
+    /* Payment method icon */
+    .method-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .method-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .method-icon.mpesa   { background: #e8f5e9; color: #1a7a4a; font-size: 11px; letter-spacing: -0.5px; }
+    .method-icon.visa    { background: #e8eaf6; color: #3949ab; font-size: 11px; }
+    .method-icon.paypal  { background: #e3f2fd; color: #1565c0; font-size: 11px; }
+    .method-icon.stripe  { background: #f3e5f5; color: #7b1fa2; font-size: 11px; }
+    .method-name { font-size: 13px; color: var(--mid); }
+
+    /* Amount */
+    .amount-cell {
+      font-family: var(--font-display);
+      font-size: 20px;
+      letter-spacing: 0.3px;
+      color: var(--dark);
+    }
+    .amount-currency {
+      font-family: var(--font-body);
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+      margin-right: 2px;
+    }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 12px;
+      border-radius: 50px;
+    }
+    .status-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+    .status-badge.paid    { background: #e8f5e9; color: #1a7a4a; }
+    .status-badge.paid::before { background: var(--green); }
+    .status-badge.pending { background: #fff8e1; color: #f57f17; }
+    .status-badge.pending::before { background: #f9a825; }
+    .status-badge.failed  { background: #ffebee; color: #c62828; }
+    .status-badge.failed::before { background: #ef5350; }
+    .status-badge.refunded { background: #e3f2fd; color: #1565c0; }
+    .status-badge.refunded::before { background: #1976d2; }
+
+    /* Download receipt */
+    .receipt-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 500;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition);
+      font-family: var(--font-body);
+    }
+    .receipt-btn:hover { background: rgba(200,82,42,0.08); }
+    .receipt-btn.disabled { color: var(--muted); pointer-events: none; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 64px 24px;
+    }
+    .empty-icon {
+      width: 64px; height: 64px;
+      background: var(--off-white);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 28px;
+    }
+    .empty-state h3 { font-size: 18px; font-weight: 500; color: var(--dark); margin-bottom: 8px; }
+    .empty-state p  { font-size: 14px; color: var(--muted); }
+
+    /* ===== PAGINATION ===== */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--off-white);
+    }
+    .pagination-info { font-size: 13px; color: var(--muted); }
+    .pagination-btns { display: flex; gap: 6px; }
+    .page-btn {
+      width: 34px; height: 34px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--mid);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-family: var(--font-body);
+    }
+    .page-btn:hover { border-color: var(--dark); color: var(--dark); }
+    .page-btn.active {
+      background: var(--dark);
+      border-color: var(--dark);
+      color: var(--white);
+    }
+    .page-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+    /* ===== ACTIVE BOOSTERS ===== */
+    .boosters-section { margin-bottom: 40px; }
+    .booster-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .booster-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .booster-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: #b5860d;
+    }
+    .booster-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .booster-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 2px;
+    }
+    .booster-listing {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .booster-status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-top: 4px;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(26,122,74,0.15);
+      animation: boosterPulse 2s infinite;
+    }
+    @keyframes boosterPulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(26,122,74,0.15); }
+      50% { box-shadow: 0 0 0 6px rgba(26,122,74,0.05); }
+    }
+    .booster-progress-wrap {
+      width: 100%;
+    }
+    .booster-days {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .booster-progress {
+      height: 4px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .booster-progress-bar {
+      height: 100%;
+      background: #b5860d;
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+    .booster-type-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #b5860d;
+      background: rgba(181,134,13,0.1);
+      padding: 3px 10px;
+      border-radius: 50px;
+    }
+
+    /* ===== NO BOOSTERS NOTICE ===== */
+    .no-boosters {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .no-boosters-text p:first-child {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+    .no-boosters-text p:last-child {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1100px) {
+      .main-content { padding: 32px 32px; }
+    }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main-content { padding: 28px 24px; max-width: 100%; }
+      .billing-summary { grid-template-columns: 1fr 1fr; }
+      .page-header h1 { font-size: 36px; }
+    }
+
+    @media (max-width: 600px) {
+      .billing-summary { grid-template-columns: 1fr; }
+      .filter-row { gap: 8px; }
+      .filter-spacer { display: none; }
+      .export-btn span { display: none; }
+      /* Scroll table horizontally on mobile */
+      .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 680px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">Makao</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="listings.html">Rent</a></li>
+        <li><a href="listings.html?type=featured">Featured</a></li>
+        <li><a href="pricing.html">Pricing</a></li>
+      </ul>
+      <div class="nav-auth">
+        <a href="dashboard.html" class="btn-ghost">Dashboard</a>
+        <a href="#" class="btn-primary" id="logoutBtn">Log Out</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MOBILE MENU ===== -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="listings.html">Rent</a></li>
+      <li><a href="listings.html?type=featured">Featured</a></li>
+      <li><a href="pricing.html">Pricing</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="#" id="mobileLogout">Log Out</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== PAGE LAYOUT ===== -->
+  <div class="page-wrapper">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar" id="sidebarAvatar">J</div>
+        <div class="sidebar-name" id="sidebarName">Loading...</div>
+        <div class="sidebar-type">
+          <span id="sidebarType">Host</span>
+          <span class="sidebar-badge" id="sidebarBadge" style="display:none;">Agency</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <p class="sidebar-nav-label">Host Menu</p>
+
+        <a href="dashboard.html" class="sidebar-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="add-listing.html" class="sidebar-link">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Listing
+        </a>
+        <a href="billing.html" class="sidebar-link active">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <a href="analytics.html" class="sidebar-link" id="analyticsLink" style="display:none;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-logout" id="sidebarLogout">
+          <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <h1>Billing</h1>
+        <p>Your full payment history and active booster status.</p>
+      </div>
+
+      <!-- SUMMARY CARDS -->
+      <div class="billing-summary">
+        <div class="summary-card accent-top">
+          <div class="summary-icon orange">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <p class="summary-label">Total Spent</p>
+          <p class="summary-value" id="totalSpent">—</p>
+          <p class="summary-sub" id="totalSpentSub">All time · KES</p>
+        </div>
+        <div class="summary-card green-top">
+          <div class="summary-icon green">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <p class="summary-label">Successful Payments</p>
+          <p class="summary-value" id="paidCount">—</p>
+          <p class="summary-sub">Confirmed transactions</p>
+        </div>
+        <div class="summary-card gold-top">
+          <div class="summary-icon gold">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <p class="summary-label">Active Boosters</p>
+          <p class="summary-value" id="boosterCount">—</p>
+          <p class="summary-sub">Currently running</p>
+        </div>
+      </div>
+
+      <!-- ACTIVE BOOSTERS -->
+      <div class="boosters-section">
+        <p class="section-label">Active Boosters</p>
+        <div id="boostersContainer">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+
+      <!-- PAYMENT HISTORY -->
+      <div>
+        <p class="section-label">Payment History</p>
+
+        <!-- FILTERS -->
+        <div class="filter-row">
+          <button class="filter-pill active" data-filter="all">All</button>
+          <button class="filter-pill" data-filter="paid">Paid</button>
+          <button class="filter-pill" data-filter="pending">Pending</button>
+          <button class="filter-pill" data-filter="failed">Failed</button>
+          <div class="filter-spacer"></div>
+          <button class="export-btn" id="exportBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Export CSV</span>
+          </button>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table id="paymentsTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Transaction ID</th>
+                  <th>Package</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="paymentsBody">
+                <!-- Loading skeletons — replaced by JS -->
+                <tr class="skeleton-row">
+                  <td colspan="7" style="padding:0;">
+                    <div style="height:60px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>
+                  </td>
+                </tr>
+                <tr class="skeleton-row">
+                  <td colspan="7" style="padding:0;">
+                    <div style="height:60px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;animation-delay:0.2s;"></div>
+                  </td>
+                </tr>
+                <tr class="skeleton-row">
+                  <td colspan="7" style="padding:0;">
+                    <div style="height:60px;background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;animation-delay:0.4s;"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- PAGINATION -->
+          <div class="pagination" id="paginationRow" style="display:none;">
+            <span class="pagination-info" id="paginationInfo">Showing 1–5 of 5</span>
+            <div class="pagination-btns" id="paginationBtns"></div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div><!-- end page-wrapper -->
+
+  <style>
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+
+  <script src="js/main.js"></script>
+  <script>
+    /* =============================================
+       billing.js — inline (belongs in js/payments.js
+       for auth-aware fetching; embedded here for
+       self-contained page demo with mock data)
+       ============================================= */
+
+    // ── Auth guard ────────────────────────────────
+    // In production this reads the JWT from localStorage
+    // and redirects to login if absent / expired.
+    (function authGuard() {
+      const token = localStorage.getItem('makao_token');
+      // Uncomment in production:
+      // if (!token) { window.location.href = 'login.html'; return; }
+    })();
+
+    // ── Mock host data (replace with /api/me fetch) ──
+    const mockHost = {
+      full_name: 'James Kariuki',
+      email: 'james@kariuki.co.ke',
+      host_type: 'agency',  // 'landlord' | 'agency'
+      plan_status: 'active'
+    };
+
+    // ── Mock payments (replace with GET /api/payments) ──
+    const mockPayments = [
+      {
+        id: 1,
+        created_at: '2025-05-18T09:14:00',
+        transaction_id: 'MPE8A1C3D2',
+        package_type: 'agency',
+        payment_method: 'mpesa',
+        amount: 0,  /* owner sets in config.py */
+        currency: 'KES',
+        status: 'paid'
+      },
+      {
+        id: 2,
+        created_at: '2025-05-18T09:22:00',
+        transaction_id: 'MPE9B2D4E3',
+        package_type: 'booster_homepage',
+        payment_method: 'mpesa',
+        amount: 0,
+        currency: 'KES',
+        status: 'paid'
+      },
+      {
+        id: 3,
+        created_at: '2025-04-02T14:33:00',
+        transaction_id: 'STR_pi_3N2xJ',
+        package_type: 'landlord',
+        payment_method: 'visa',
+        amount: 0,
+        currency: 'KES',
+        status: 'paid'
+      },
+      {
+        id: 4,
+        created_at: '2025-03-15T11:10:00',
+        transaction_id: 'STR_pi_2M1wI',
+        package_type: 'booster_chatbot',
+        payment_method: 'paypal',
+        amount: 0,
+        currency: 'KES',
+        status: 'paid'
+      },
+      {
+        id: 5,
+        created_at: '2025-02-28T08:55:00',
+        transaction_id: 'MPE7A0B1C0',
+        package_type: 'landlord',
+        payment_method: 'mpesa',
+        amount: 0,
+        currency: 'KES',
+        status: 'failed'
+      },
+      {
+        id: 6,
+        created_at: '2025-01-10T16:42:00',
+        transaction_id: 'STR_pi_1L0vH',
+        package_type: 'agency',
+        payment_method: 'visa',
+        amount: 0,
+        currency: 'KES',
+        status: 'paid'
+      }
+    ];
+
+    // ── Mock active boosters (replace with GET /api/boosters/active) ──
+    const mockBoosters = [
+      {
+        id: 1,
+        booster_type: 'homepage_feature',
+        listing_title: '2-Bed Apartment, Westlands',
+        start_date: '2025-05-18',
+        end_date: '2025-05-25',
+        total_days: 7,
+        days_left: 4
+      },
+      {
+        id: 2,
+        booster_type: 'chatbot_priority',
+        listing_title: '3-Bed Villa, Karen',
+        start_date: '2025-05-15',
+        end_date: null, // no expiry
+        total_days: null,
+        days_left: null
+      }
+    ];
+
+    // ── State ─────────────────────────────────────
+    let activeFilter = 'all';
+    let currentPage  = 1;
+    const PAGE_SIZE  = 5;
+
+    // ── Init ──────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      populateSidebar();
+      populateSummary();
+      populateBoosters();
+      renderTable();
+      bindFilters();
+      bindExport();
+      bindLogout();
+    });
+
+    // ── Sidebar ───────────────────────────────────
+    function populateSidebar() {
+      const initial = mockHost.full_name.charAt(0).toUpperCase();
+      document.getElementById('sidebarAvatar').textContent = initial;
+      document.getElementById('sidebarName').textContent   = mockHost.full_name;
+
+      if (mockHost.host_type === 'agency') {
+        document.getElementById('sidebarType').textContent  = 'Agency';
+        document.getElementById('sidebarBadge').style.display = 'inline';
+        document.getElementById('analyticsLink').style.display = 'flex';
+      } else {
+        document.getElementById('sidebarType').textContent  = 'Landlord';
+      }
+    }
+
+    // ── Summary cards ─────────────────────────────
+    function populateSummary() {
+      const paid   = mockPayments.filter(p => p.status === 'paid');
+      const total  = paid.reduce((sum, p) => sum + p.amount, 0);
+      const active = mockBoosters.length;
+
+      // Amounts shown as "—" since prices are owner-set (0 placeholders)
+      document.getElementById('totalSpent').textContent  = total > 0
+        ? 'KES ' + total.toLocaleString() : '—';
+      document.getElementById('totalSpentSub').textContent =
+        paid.length + ' paid transaction' + (paid.length !== 1 ? 's' : '') + ' · KES';
+      document.getElementById('paidCount').textContent   = paid.length;
+      document.getElementById('boosterCount').textContent = active;
+    }
+
+    // ── Boosters ─────────────────────────────────
+    function populateBoosters() {
+      const container = document.getElementById('boostersContainer');
+
+      if (mockBoosters.length === 0) {
+        container.innerHTML = `
+          <div class="no-boosters">
+            <div class="no-boosters-text">
+              <p>No active boosters</p>
+              <p>Boost your listings to get more visibility and leads.</p>
+            </div>
+            <a href="dashboard.html" class="btn-dark" style="white-space:nowrap;font-size:14px;padding:11px 22px;">
+              Go to Dashboard →
+            </a>
+          </div>`;
+        return;
+      }
+
+      const boosterLabels = {
+        homepage_feature: 'Homepage Feature',
+        chatbot_priority: 'Chatbot Priority',
+        refresh_listing:  'Refresh Listing',
+        extend_visibility:'Extend Visibility'
+      };
+
+      const html = mockBoosters.map(b => {
+        const pct = b.total_days
+          ? Math.round(((b.total_days - b.days_left) / b.total_days) * 100)
+          : 100;
+        const daysText = b.days_left !== null
+          ? b.days_left + ' day' + (b.days_left !== 1 ? 's' : '') + ' left'
+          : 'Always on';
+        const endText = b.end_date
+          ? 'Ends ' + formatDate(b.end_date)
+          : 'No expiry';
+
+        return `
+          <div class="booster-card">
+            <div class="booster-header">
+              <div>
+                <p class="booster-name">${escHtml(b.listing_title)}</p>
+                <p class="booster-listing">${escHtml(boosterLabels[b.booster_type] || b.booster_type)}</p>
+              </div>
+              <div class="booster-status-dot"></div>
+            </div>
+            ${b.total_days ? `
+            <div class="booster-progress-wrap">
+              <div class="booster-days">
+                <span>${daysText}</span>
+                <span>${endText}</span>
+              </div>
+              <div class="booster-progress">
+                <div class="booster-progress-bar" style="width:${pct}%"></div>
+              </div>
+            </div>` : `
+            <div class="booster-days" style="font-size:12px;color:var(--muted);">
+              <span>${daysText}</span>
+            </div>`}
+            <div>
+              <span class="booster-type-pill">
+                ★ ${escHtml(boosterLabels[b.booster_type] || b.booster_type)}
+              </span>
+            </div>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = `<div class="booster-cards">${html}</div>`;
+    }
+
+    // ── Filter & render table ─────────────────────
+    function bindFilters() {
+      document.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeFilter = btn.dataset.filter;
+          currentPage  = 1;
+          renderTable();
+        });
+      });
+    }
+
+    function getFilteredPayments() {
+      if (activeFilter === 'all') return mockPayments;
+      return mockPayments.filter(p => p.status === activeFilter);
+    }
+
+    function renderTable() {
+      const filtered = getFilteredPayments();
+      const total    = filtered.length;
+      const pages    = Math.ceil(total / PAGE_SIZE);
+      const start    = (currentPage - 1) * PAGE_SIZE;
+      const slice    = filtered.slice(start, start + PAGE_SIZE);
+      const tbody    = document.getElementById('paymentsBody');
+
+      // Remove skeleton rows
+      document.querySelectorAll('.skeleton-row').forEach(r => r.remove());
+
+      if (total === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <div class="empty-icon">🧾</div>
+                <h3>No payments found</h3>
+                <p>No ${activeFilter === 'all' ? '' : activeFilter + ' '}payments match your filter.</p>
+              </div>
+            </td>
+          </tr>`;
+        document.getElementById('paginationRow').style.display = 'none';
+        return;
+      }
+
+      tbody.innerHTML = slice.map(p => buildRow(p)).join('');
+
+      // Pagination
+      const pRow = document.getElementById('paginationRow');
+      if (total > PAGE_SIZE) {
+        pRow.style.display = 'flex';
+        document.getElementById('paginationInfo').textContent =
+          `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total}`;
+        buildPagination(pages);
+      } else {
+        pRow.style.display = 'none';
+      }
+    }
+
+    function buildRow(p) {
+      const methodConfig = {
+        mpesa:  { icon: 'MPesa', cls: 'mpesa',  label: 'M-Pesa' },
+        visa:   { icon: 'VISA',  cls: 'visa',   label: 'Visa' },
+        paypal: { icon: 'PP',    cls: 'paypal',  label: 'PayPal' },
+        stripe: { icon: 'STR',   cls: 'stripe',  label: 'Stripe' }
+      };
+      const pkgConfig = {
+        landlord:          { label: 'Landlord', cls: 'landlord' },
+        agency:            { label: 'Agency',   cls: 'agency' },
+        booster_homepage:  { label: 'Homepage Boost', cls: 'booster' },
+        booster_chatbot:   { label: 'Chatbot Priority', cls: 'booster' },
+        booster_refresh:   { label: 'Refresh Listing', cls: 'booster' },
+        booster_extend:    { label: 'Extend Visibility', cls: 'booster' }
+      };
+
+      const method = methodConfig[p.payment_method] || { icon: '?', cls: '', label: p.payment_method };
+      const pkg    = pkgConfig[p.package_type]  || { label: p.package_type, cls: 'landlord' };
+
+      // Amount: show placeholder if 0 (prices set by owner in config.py)
+      const amountDisplay = p.amount > 0
+        ? `<span class="amount-currency">KES</span>${p.amount.toLocaleString()}`
+        : `<span style="font-family:var(--font-body);font-size:14px;color:var(--muted);">—</span>`;
+
+      const receiptBtn = p.status === 'paid'
+        ? `<button class="receipt-btn" onclick="downloadReceipt(${p.id})">
+             <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+             Receipt
+           </button>`
+        : `<span class="receipt-btn disabled">—</span>`;
+
+      return `
+        <tr>
+          <td>${formatDateTime(p.created_at)}</td>
+          <td><span class="tx-id">${escHtml(p.transaction_id)}</span></td>
+          <td><span class="pkg-pill ${pkg.cls}">${pkg.label}</span></td>
+          <td>
+            <div class="method-cell">
+              <span class="method-icon ${method.cls}">${method.icon}</span>
+              <span class="method-name">${method.label}</span>
+            </div>
+          </td>
+          <td><span class="amount-cell">${amountDisplay}</span></td>
+          <td><span class="status-badge ${p.status}">${capitalise(p.status)}</span></td>
+          <td>${receiptBtn}</td>
+        </tr>`;
+    }
+
+    function buildPagination(pages) {
+      const btns = document.getElementById('paginationBtns');
+      let html = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+      for (let i = 1; i <= pages; i++) {
+        html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+      }
+      html += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === pages ? 'disabled' : ''}>›</button>`;
+      btns.innerHTML = html;
+    }
+
+    function changePage(page) {
+      currentPage = page;
+      renderTable();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── Export CSV ────────────────────────────────
+    function bindExport() {
+      document.getElementById('exportBtn').addEventListener('click', exportCSV);
+    }
+
+    function exportCSV() {
+      const filtered = getFilteredPayments();
+      const header   = ['Date', 'Transaction ID', 'Package', 'Method', 'Amount (KES)', 'Status'];
+      const rows     = filtered.map(p => [
+        formatDateTime(p.created_at),
+        p.transaction_id,
+        p.package_type,
+        p.payment_method,
+        p.amount,
+        p.status
+      ]);
+      const csv  = [header, ...rows].map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'makao-payments.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ── Receipt download (stub) ───────────────────
+    function downloadReceipt(paymentId) {
+      // In production: GET /api/payments/{paymentId}/receipt → PDF blob
+      alert('Receipt download for payment #' + paymentId + ' will be available once the backend is connected.');
+    }
+
+    // ── Logout ────────────────────────────────────
+    function bindLogout() {
+      const doLogout = () => {
+        localStorage.removeItem('makao_token');
+        window.location.href = 'login.html';
+      };
+      document.getElementById('logoutBtn')?.addEventListener('click', doLogout);
+      document.getElementById('sidebarLogout')?.addEventListener('click', doLogout);
+      document.getElementById('mobileLogout')?.addEventListener('click', doLogout);
+    }
+
+    // ── Helpers ───────────────────────────────────
+    function formatDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString('en-KE', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+    }
+    function formatDateTime(dateStr) {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-KE', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      }) + '<br><span style="font-size:12px;color:var(--muted);">' +
+        d.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' }) + '</span>';
+    }
+    function capitalise(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

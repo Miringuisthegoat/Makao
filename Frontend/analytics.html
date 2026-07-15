@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics — Makao</title>
+  <meta name="description" content="Track your listing performance, views, and enquiries on Makao." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:;base64,=" />
+
+<style>
+/* =============================================
+   Analytics Page — Makao
+   Agency-only. Locked to non-agency hosts.
+   ============================================= */
+
+body.analytics-page {
+  background: var(--off-white);
+  min-height: 100vh;
+}
+
+body.analytics-page .navbar {
+  background: rgba(10,10,10,0.96);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.nav-avatar-wrap { position: relative; cursor: pointer; }
+.nav-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  background: var(--charcoal);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 500; color: var(--white);
+}
+
+/* =============================================
+   PAGE HEADER BANNER
+   ============================================= */
+.analytics-header {
+  background: var(--dark);
+  padding: 80px 0 56px;
+  margin-top: var(--nav-h);
+  position: relative;
+  overflow: hidden;
+}
+
+.analytics-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(200,82,42,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200,82,42,0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+.analytics-header::after {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(200,82,42,0.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.analytics-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 32px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.analytics-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 12px;
+}
+.analytics-eyebrow-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(26,122,74,0.2);
+  border: 1px solid rgba(26,122,74,0.4);
+  color: #4ade91;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 50px;
+}
+
+.analytics-title {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 56px);
+  color: var(--white);
+  letter-spacing: 0.5px;
+  line-height: 1.05;
+  margin-bottom: 10px;
+}
+
+.analytics-subtitle {
+  font-size: 15px;
+  color: rgba(255,255,255,0.45);
+  font-weight: 300;
+}
+
+.analytics-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.date-range-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+  font-size: 13px;
+  font-family: var(--font-body);
+  padding: 9px 16px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+.date-range-btn:hover,
+.date-range-btn.active {
+  background: rgba(200,82,42,0.2);
+  border-color: rgba(200,82,42,0.5);
+  color: #ff9a78;
+}
+
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--white);
+  color: var(--dark);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  padding: 9px 18px;
+  border-radius: 50px;
+  cursor: pointer;
+  border: none;
+  transition: background var(--transition), transform var(--transition);
+}
+.export-btn:hover { background: #f0ede8; transform: translateY(-1px); }
+
+.header-stripe {
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light), transparent 70%);
+}
+
+/* =============================================
+   AGENCY LOCK OVERLAY
+   ============================================= */
+.agency-lock-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(10,10,10,0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.agency-lock-overlay.show { display: flex; }
+
+.lock-card {
+  background: var(--white);
+  border-radius: 20px;
+  padding: 48px 40px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.4);
+  animation: lockIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes lockIn {
+  from { opacity:0; transform: scale(0.92) translateY(16px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.lock-icon {
+  width: 72px; height: 72px;
+  background: rgba(200,82,42,0.1);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 32px;
+}
+.lock-card h2 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  color: var(--dark);
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+.lock-card p {
+  font-size: 15px;
+  color: var(--mid);
+  line-height: 1.65;
+  margin-bottom: 28px;
+}
+.lock-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+  text-align: left;
+}
+.lock-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--dark);
+}
+.lock-feature-dot {
+  width: 8px; height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.lock-actions { display: flex; gap: 12px; justify-content: center; }
+
+/* =============================================
+   MAIN LAYOUT
+   ============================================= */
+.analytics-layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 36px 32px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* =============================================
+   KPI STRIP
+   ============================================= */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpi-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  transition: transform var(--transition), box-shadow var(--transition);
+  animation: cardSlideUp 0.5s ease both;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.kpi-card.orange::before { background: linear-gradient(90deg, var(--accent), var(--accent-light)); }
+.kpi-card.blue::before   { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.kpi-card.green::before  { background: linear-gradient(90deg, var(--green), #22c55e); }
+.kpi-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+
+.kpi-card:nth-child(1) { animation-delay: 0.05s; }
+.kpi-card:nth-child(2) { animation-delay: 0.10s; }
+.kpi-card:nth-child(3) { animation-delay: 0.15s; }
+.kpi-card:nth-child(4) { animation-delay: 0.20s; }
+
+@keyframes cardSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.kpi-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+}
+.kpi-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+}
+.kpi-icon.orange { background: rgba(200,82,42,0.1); color: var(--accent); }
+.kpi-icon.blue   { background: rgba(59,130,246,0.1); color: #3b82f6; }
+.kpi-icon.green  { background: rgba(26,122,74,0.1);  color: var(--green); }
+.kpi-icon.purple { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+
+.kpi-num {
+  font-family: var(--font-display);
+  font-size: 40px;
+  color: var(--dark);
+  line-height: 1;
+  letter-spacing: 0.3px;
+}
+
+.kpi-trend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.kpi-trend.up     { color: var(--green); }
+.kpi-trend.down   { color: #ef4444; }
+.kpi-trend.steady { color: var(--muted); }
+.kpi-trend-label  { color: var(--muted); font-size: 12px; margin-left: 2px; }
+
+/* =============================================
+   MAIN GRID: chart + donut
+   ============================================= */
+.analytics-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+
+.an-panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+
+.an-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.an-panel-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--dark);
+  letter-spacing: 0.3px;
+}
+.an-panel-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--mid);
+}
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+.chart-svg { width: 100%; display: block; }
+
+.chart-grid-line { stroke: var(--border); stroke-width: 1; }
+.chart-axis-label { fill: #999; font-family: 'DM Sans', sans-serif; font-size: 11px; }
+
+.chart-line-views {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.chart-line-enquiry {
+  fill: none;
+  stroke: #3b82f6;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 5 4;
+}
+
+.chart-dot {
+  fill: var(--white);
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  cursor: pointer;
+}
+
+.chart-tooltip {
+  position: absolute;
+  background: var(--dark);
+  color: var(--white);
+  font-size: 12px;
+  font-family: var(--font-body);
+  padding: 8px 14px;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+.chart-tooltip.visible { opacity: 1; }
+.tooltip-label { color: rgba(255,255,255,0.5); font-size: 11px; margin-bottom: 3px; }
+.tooltip-val { font-weight: 500; }
+
+/* =============================================
+   DONUT
+   ============================================= */
+.donut-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.donut-svg-wrap {
+  position: relative;
+  width: 160px; height: 160px;
+  flex-shrink: 0;
+}
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.donut-center-num {
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: var(--dark);
+  line-height: 1;
+}
+.donut-center-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.source-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.source-color {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.source-name { flex: 1; color: var(--dark); }
+.source-pct { font-weight: 500; color: var(--dark); }
+.source-bar-wrap {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.source-bar {
+  height: 100%;
+  border-radius: 4px;
+  width: 0;
+  transition: width 1.2s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* =============================================
+   BOTTOM GRID
+   ============================================= */
+.analytics-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+}
+
+.perf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.perf-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+  padding: 0 12px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.perf-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--dark);
+}
+.perf-table tr:last-child td { border-bottom: none; }
+.perf-table tr:hover td { background: #fafaf8; }
+
+.mini-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mini-bar-track {
+  flex: 1;
+  height: 5px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.mini-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  border-radius: 4px;
+  transition: width 1.4s cubic-bezier(0.22,1,0.36,1);
+}
+
+.listing-mini-title {
+  font-weight: 500;
+  color: var(--dark);
+  margin-bottom: 2px;
+  font-size: 13px;
+}
+.listing-mini-loc {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* =============================================
+   HEATMAP
+   ============================================= */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-top: 8px;
+}
+.heatmap-label-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.heatmap-day-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.hm-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: var(--border);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.hm-cell:hover { transform: scale(1.15); }
+.hm-cell.l1 { background: rgba(200,82,42,0.15); }
+.hm-cell.l2 { background: rgba(200,82,42,0.30); }
+.hm-cell.l3 { background: rgba(200,82,42,0.55); }
+.hm-cell.l4 { background: rgba(200,82,42,0.80); }
+.hm-cell.l5 { background: var(--accent); }
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.heatmap-legend-cells { display: flex; gap: 3px; }
+.hm-legend-cell { width: 10px; height: 10px; border-radius: 2px; }
+
+/* =============================================
+   ENQUIRIES
+   ============================================= */
+.enquiry-list { display: flex; flex-direction: column; }
+.enquiry-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.enquiry-item:last-child { border-bottom: none; }
+.enquiry-avatar {
+  width: 36px; height: 36px;
+  background: var(--off-white);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--mid);
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.enquiry-body { flex: 1; }
+.enquiry-name { font-size: 13px; font-weight: 500; color: var(--dark); margin-bottom: 2px; }
+.enquiry-listing { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+.enquiry-msg {
+  font-size: 12px;
+  color: var(--mid);
+  line-height: 1.5;
+  background: var(--off-white);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.enquiry-time { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+/* =============================================
+   TABS
+   ============================================= */
+.an-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--off-white);
+  border-radius: 50px;
+  padding: 4px;
+}
+.an-tab {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 18px;
+  border-radius: 50px;
+  color: var(--mid);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  font-family: var(--font-body);
+  border: none;
+  background: transparent;
+  white-space: nowrap;
+}
+.an-tab.active {
+  background: var(--white);
+  color: var(--dark);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 1024px) {
+  .analytics-layout { padding: 28px 20px 60px; }
+  .analytics-main-grid { grid-template-columns: 1fr; }
+  .analytics-bottom-grid { grid-template-columns: 1fr; }
+  .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .analytics-header-inner { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 768px) {
+  .nav-links, .nav-auth { display: none; }
+  .hamburger { display: flex; }
+  .mobile-menu { display: block; }
+  .kpi-strip { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .analytics-header { padding: 60px 0 40px; }
+  .lock-card { padding: 36px 24px; }
+  .lock-actions { flex-direction: column; }
+}
+@media (max-width: 480px) {
+  .kpi-num { font-size: 30px; }
+  .heatmap-grid { gap: 3px; }
+}
+</style>
+</head>
+<body class="analytics-page">
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">Makao</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="add-listing.html">Add Listing</a></li>
+        <li><a href="billing.html">Billing</a></li>
+        <li><a href="analytics.html" style="color:var(--white);">Analytics</a></li>
+      </ul>
+
+      <div class="nav-auth">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:13px;color:rgba(255,255,255,0.55);" id="navHostName">Loading...</span>
+          <div class="nav-avatar-wrap">
+            <div class="nav-avatar" id="navAvatar">J</div>
+          </div>
+        </div>
+        <a href="login.html" class="btn-ghost" style="font-size:13px;padding:7px 14px;">Log out</a>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="add-listing.html">Add Listing</a></li>
+      <li><a href="billing.html">Billing</a></li>
+      <li><a href="analytics.html">Analytics</a></li>
+      <li><a href="login.html" class="mobile-join">Log out</a></li>
+    </ul>
+  </div>
+
+  <!-- AGENCY LOCK OVERLAY -->
+  <div class="agency-lock-overlay" id="agencyLockOverlay">
+    <div class="lock-card">
+      <div class="lock-icon">📊</div>
+      <h2>Agency Feature Only</h2>
+      <p>
+        Detailed analytics are available exclusively to Agency hosts. Upgrade to unlock full performance tracking across all your listings.
+      </p>
+      <div class="lock-features">
+        <div class="lock-feature">
+          <span class="lock-feature-dot"></span>
+          Views &amp; enquiries per listing
+        </div>
+        <div class="lock-feature">
+          <span class="lock-feature-dot"></span>
+          Traffic source breakdown
+        </div>
+        <div class="lock-feature">
+          <span class="lock-feature-dot"></span>
+          Peak enquiry heatmap
+        </div>
+        <div class="lock-feature">
+          <span class="lock-feature-dot"></span>
+          Monthly trends &amp; growth
+        </div>
+      </div>
+      <div class="lock-actions">
+        <a href="pricing.html" style="display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:50px;font-size:15px;font-weight:500;text-decoration:none;background:var(--dark);color:var(--white);">
+          Upgrade to Agency
+        </a>
+        <a href="dashboard.html" style="display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:50px;font-size:15px;font-weight:400;text-decoration:none;border:1.5px solid var(--border);color:var(--mid);">
+          Back to Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <header class="analytics-header">
+    <div class="analytics-header-inner">
+      <div>
+        <div class="analytics-eyebrow">
+          Analytics
+          <span class="analytics-eyebrow-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Agency
+          </span>
+        </div>
+        <h1 class="analytics-title">Listing Performance</h1>
+        <p class="analytics-subtitle">Track views, enquiries, and traffic across all your properties.</p>
+      </div>
+
+      <div class="analytics-controls">
+        <button class="date-range-btn" onclick="setRange(this,'7d')">7 days</button>
+        <button class="date-range-btn active" onclick="setRange(this,'30d')">30 days</button>
+        <button class="date-range-btn" onclick="setRange(this,'90d')">3 months</button>
+        <button class="export-btn" onclick="exportCSV()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="header-stripe"></div>
+
+  <!-- ANALYTICS LAYOUT -->
+  <div class="analytics-layout" id="analyticsContent">
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+      <div class="kpi-card orange">
+        <div class="kpi-header">
+          <span class="kpi-label">Total Views</span>
+          <div class="kpi-icon orange">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+        </div>
+        <div class="kpi-num" id="kpiViews">0</div>
+        <div class="kpi-trend up">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+          +18% <span class="kpi-trend-label">vs last period</span>
+        </div>
+      </div>
+
+      <div class="kpi-card blue">
+        <div class="kpi-header">
+          <span class="kpi-label">Enquiries</span>
+          <div class="kpi-icon blue">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-num" id="kpiEnquiries">0</div>
+        <div class="kpi-trend up">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+          +6 new <span class="kpi-trend-label">this week</span>
+        </div>
+      </div>
+
+      <div class="kpi-card green">
+        <div class="kpi-header">
+          <span class="kpi-label">Enquiry Rate</span>
+          <div class="kpi-icon green">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+        </div>
+        <div class="kpi-num" id="kpiRate">0<span style="font-family:var(--font-body);font-size:18px;color:var(--mid);">%</span></div>
+        <div class="kpi-trend up">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+          +0.4pp <span class="kpi-trend-label">vs last period</span>
+        </div>
+      </div>
+
+      <div class="kpi-card purple">
+        <div class="kpi-header">
+          <span class="kpi-label">Active Listings</span>
+          <div class="kpi-icon purple">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+        </div>
+        <div class="kpi-num" id="kpiListings">0</div>
+        <div class="kpi-trend steady">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          No change <span class="kpi-trend-label">this month</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CHART + TRAFFIC SOURCES -->
+    <div class="analytics-main-grid">
+
+      <div class="an-panel">
+        <div class="an-panel-header">
+          <div>
+            <p class="an-panel-title">Views &amp; Enquiries</p>
+            <p class="an-panel-subtitle">Daily breakdown for the selected period</p>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-dot" style="background:var(--accent);"></span>
+              Views
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#3b82f6;"></span>
+              Enquiries
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-wrap" id="chartWrap">
+          <svg class="chart-svg" id="mainChart" viewBox="0 0 680 260" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gradViews" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#c8522a" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="#c8522a" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="gradEnquiry" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.12"/>
+                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line class="chart-grid-line" x1="48" y1="20"  x2="672" y2="20"/>
+            <line class="chart-grid-line" x1="48" y1="70"  x2="672" y2="70"/>
+            <line class="chart-grid-line" x1="48" y1="120" x2="672" y2="120"/>
+            <line class="chart-grid-line" x1="48" y1="170" x2="672" y2="170"/>
+            <line class="chart-grid-line" x1="48" y1="220" x2="672" y2="220"/>
+            <text class="chart-axis-label" x="40" y="24"  text-anchor="end">200</text>
+            <text class="chart-axis-label" x="40" y="74"  text-anchor="end">150</text>
+            <text class="chart-axis-label" x="40" y="124" text-anchor="end">100</text>
+            <text class="chart-axis-label" x="40" y="174" text-anchor="end">50</text>
+            <text class="chart-axis-label" x="40" y="224" text-anchor="end">0</text>
+            <g id="chartAreasGroup"></g>
+            <g id="chartLinesGroup"></g>
+            <g id="chartDotsGroup"></g>
+            <g id="chartXLabels"></g>
+          </svg>
+          <div class="chart-tooltip" id="chartTooltip">
+            <p class="tooltip-label" id="tooltipLabel"></p>
+            <p class="tooltip-val" id="tooltipVal"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Traffic Sources -->
+      <div class="an-panel">
+        <div class="an-panel-header">
+          <div>
+            <p class="an-panel-title">Traffic Sources</p>
+            <p class="an-panel-subtitle">Where visitors come from</p>
+          </div>
+        </div>
+        <div class="donut-wrap">
+          <div class="donut-svg-wrap">
+            <svg viewBox="0 0 160 160" width="160" height="160">
+              <g id="donutGroup" transform="rotate(-90 80 80)"></g>
+            </svg>
+            <div class="donut-center">
+              <span class="donut-center-num" id="donutTotal">0</span>
+              <span class="donut-center-label">total views</span>
+            </div>
+          </div>
+          <div class="source-list" id="sourceList"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM GRID -->
+    <div class="analytics-bottom-grid">
+
+      <!-- Per-Listing Performance Table -->
+      <div class="an-panel">
+        <div class="an-panel-header">
+          <div>
+            <p class="an-panel-title">Per-Listing Performance</p>
+            <p class="an-panel-subtitle">Views and enquiries by property</p>
+          </div>
+          <div class="an-tabs">
+            <button class="an-tab active" onclick="switchPerfTab(this,'views')">Views</button>
+            <button class="an-tab" onclick="switchPerfTab(this,'enquiries')">Enquiries</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="perf-table">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Views</th>
+                <th style="min-width:120px;">Share</th>
+                <th>Enquiries</th>
+                <th>Rate</th>
+              </tr>
+            </thead>
+            <tbody id="perfTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right column: heatmap + enquiries -->
+      <div style="display:flex;flex-direction:column;gap:24px;">
+
+        <!-- Heatmap -->
+        <div class="an-panel">
+          <div class="an-panel-header">
+            <div>
+              <p class="an-panel-title">Peak Enquiry Times</p>
+              <p class="an-panel-subtitle">Last 30 days — by day of week</p>
+            </div>
+          </div>
+          <div class="heatmap-label-row">
+            <span class="heatmap-day-label">Mon</span>
+            <span class="heatmap-day-label">Tue</span>
+            <span class="heatmap-day-label">Wed</span>
+            <span class="heatmap-day-label">Thu</span>
+            <span class="heatmap-day-label">Fri</span>
+            <span class="heatmap-day-label">Sat</span>
+            <span class="heatmap-day-label">Sun</span>
+          </div>
+          <div class="heatmap-grid" id="heatmapGrid"></div>
+          <div class="heatmap-legend">
+            <span>Less</span>
+            <div class="heatmap-legend-cells">
+              <div class="hm-legend-cell" style="background:var(--border);"></div>
+              <div class="hm-legend-cell" style="background:rgba(200,82,42,0.15);"></div>
+              <div class="hm-legend-cell" style="background:rgba(200,82,42,0.35);"></div>
+              <div class="hm-legend-cell" style="background:rgba(200,82,42,0.60);"></div>
+              <div class="hm-legend-cell" style="background:var(--accent);"></div>
+            </div>
+            <span>More</span>
+          </div>
+        </div>
+
+        <!-- Recent Enquiries -->
+        <div class="an-panel">
+          <div class="an-panel-header">
+            <div>
+              <p class="an-panel-title">Recent Enquiries</p>
+              <p class="an-panel-subtitle">Latest messages from renters</p>
+            </div>
+          </div>
+          <div class="enquiry-list" id="enquiryList"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /analytics-layout -->
+
+
+  <!-- FOOTER (minimal) -->
+  <footer style="background:var(--dark);padding:24px 0;border-top:1px solid rgba(255,255,255,0.06);">
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <a href="index.html" class="logo" style="gap:8px;">
+        <span class="logo-mark" style="width:28px;height:28px;font-size:16px;">M</span>
+        <span class="logo-text" style="font-size:20px;">Makao</span>
+      </a>
+      <p style="font-size:13px;color:rgba(255,255,255,0.3);">© 2025 Makao. All rights reserved.</p>
+      <div style="display:flex;gap:20px;">
+        <a href="#" style="font-size:13px;color:rgba(255,255,255,0.4);" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Privacy</a>
+        <a href="#" style="font-size:13px;color:rgba(255,255,255,0.4);" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Terms</a>
+        <a href="listings.html" style="font-size:13px;color:rgba(255,255,255,0.4);" onmouseover="this.style.color='rgba(255,255,255,0.8)'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Browse</a>
+      </div>
+    </div>
+  </footer>
+
+
+  <script src="js/main.js"></script>
+
+  <script>
+    /* =============================================
+       analytics.js — inline
+
+       In production all data comes from:
+         GET /api/host/analytics?range=30d  (JWT protected)
+
+       Non-agency hosts see the lock overlay and
+       cannot access any data.
+       ============================================= */
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+      /* ── 1. Auth guard ──
+         In production:
+         const token = localStorage.getItem('makao_token');
+         if (!token) { window.location.href = 'login.html'; return; }
+      */
+
+      /* ── 2. Mock host object ──
+         In production replace with:
+         const res = await fetch('/api/host/me', {
+           headers: { Authorization: `Bearer ${token}` }
+         });
+         const host = await res.json();
+      */
+      const host = {
+        full_name: 'James Kariuki',
+        host_type: 'agency',   // Change to 'landlord' to test the lock overlay
+        initials:  'JK',
+      };
+
+      /* ── 3. Agency gate: block non-agency hosts ── */
+      if (host.host_type !== 'agency') {
+        document.getElementById('agencyLockOverlay').classList.add('show');
+        return; // Stop all further rendering
+      }
+
+      /* ── 4. Populate navbar ── */
+      document.getElementById('navHostName').textContent = host.full_name;
+      document.getElementById('navAvatar').textContent   = host.initials;
+
+      /* ── 5. KPI data (replace with API response) ── */
+      const kpi = { views: 1240, enquiries: 38, rate: 3, listings: 3 };
+
+      animateCounter('kpiViews',     kpi.views,     1200);
+      animateCounter('kpiEnquiries', kpi.enquiries, 900);
+      animateCounter('kpiRate',      kpi.rate,      800, true);
+      animateCounter('kpiListings',  kpi.listings,  600);
+
+      /* ── 6. Line chart ── */
+      renderLineChart(generateChartData(30));
+
+      /* ── 7. Traffic sources donut ── */
+      const sources = [
+        { name: 'Direct Search',  pct: 42, color: '#c8522a' },
+        { name: 'Chatbot AI',     pct: 31, color: '#3b82f6' },
+        { name: 'Featured Slot',  pct: 16, color: '#1a7a4a' },
+        { name: 'Social & Other', pct: 11, color: '#8b5cf6' },
+      ];
+      renderDonut(sources, kpi.views);
+      renderSourceList(sources);
+
+      /* ── 8. Per-listing performance table ── */
+      const listingPerf = [
+        { title: '3-Bed Apartment, Kilimani', location: 'Kilimani, Nairobi', views: 842, enquiries: 22 },
+        { title: 'Modern Studio, Westlands',  location: 'Westlands, Nairobi', views: 318, enquiries: 12 },
+        { title: '4-Bed Maisonette, Karen',   location: 'Karen, Nairobi',     views:  80, enquiries:  4 },
+      ];
+      renderPerfTable(listingPerf);
+
+      /* ── 9. Heatmap ── */
+      renderHeatmap();
+
+      /* ── 10. Recent enquiries ── */
+      renderEnquiries([
+        { initials:'AW', name:'Alice Wanjiku',  listing:'3-Bed Kilimani',
+          msg:'Hello, is the apartment still available from August?', time:'2 hours ago' },
+        { initials:'BO', name:'Brian Otieno',   listing:'Modern Studio, Westlands',
+          msg:'Can I book a viewing this weekend?', time:'5 hours ago' },
+        { initials:'CM', name:'Carol Mwangi',   listing:'4-Bed Maisonette, Karen',
+          msg:'Is parking included? We have two cars.', time:'1 day ago' },
+        { initials:'DN', name:'David Njoroge',  listing:'3-Bed Kilimani',
+          msg:'What is the minimum lease term?', time:'2 days ago' },
+      ]);
+
+      /* Animate source bars after a short paint delay */
+      setTimeout(() => {
+        document.querySelectorAll('.source-bar').forEach(b => {
+          b.style.width = b.dataset.pct + '%';
+        });
+      }, 350);
+
+    }); // end DOMContentLoaded
+
+
+    /* ============================================
+       LINE CHART
+       ============================================ */
+
+    function generateChartData(days) {
+      /* Realistic-looking mock data with a mid-period boost spike */
+      const data = [];
+      const now  = new Date();
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const label = d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+        const base  = 30 + Math.round(Math.random() * 55);
+        const spike = (i < 12 && i > 8) ? 80 : 0; // simulate a featured-boost spike
+        const views = Math.max(8, base + spike + Math.round(Math.sin(i * 0.4) * 14));
+        const enquiries = Math.max(0, Math.round(views * 0.035 + Math.random() * 2));
+        data.push({ label, views, enquiries });
+      }
+      return data;
+    }
+
+    function renderLineChart(data) {
+      const W = 680, H = 260;
+      const pad = { top:20, bottom:30, left:48, right:8 };
+      const innerW = W - pad.left - pad.right;
+      const innerH = H - pad.top  - pad.bottom;
+
+      const maxV = Math.max(...data.map(d => d.views));
+      const maxE = Math.max(...data.map(d => d.enquiries));
+
+      const xS  = i => pad.left + (i / (data.length - 1)) * innerW;
+      const ySV = v => pad.top + innerH - (v / (maxV * 1.1)) * innerH;
+      const ySE = e => pad.top + innerH - (e / (maxE * 1.2)) * innerH;
+
+      const vPts = data.map((d,i) => `${xS(i)},${ySV(d.views)}`);
+      const ePts = data.map((d,i) => `${xS(i)},${ySE(d.enquiries)}`);
+      const vLine = 'M' + vPts.join(' L');
+      const eLine = 'M' + ePts.join(' L');
+      const bot   = H - pad.bottom;
+      const vArea = `${vLine} L${xS(data.length-1)},${bot} L${xS(0)},${bot} Z`;
+      const eArea = `${eLine} L${xS(data.length-1)},${bot} L${xS(0)},${bot} Z`;
+
+      document.getElementById('chartAreasGroup').innerHTML =
+        `<path d="${eArea}" fill="url(#gradEnquiry)"/>` +
+        `<path d="${vArea}" fill="url(#gradViews)"/>`;
+
+      document.getElementById('chartLinesGroup').innerHTML =
+        `<path d="${eLine}" class="chart-line-enquiry"/>` +
+        `<path d="${vLine}" class="chart-line-views"/>`;
+
+      /* Dots every 5th point */
+      document.getElementById('chartDotsGroup').innerHTML = data.map((d,i) => {
+        if (i % 5 !== 0 && i !== data.length-1) return '';
+        return `<circle class="chart-dot" cx="${xS(i)}" cy="${ySV(d.views)}" r="4"
+          data-label="${d.label}" data-views="${d.views}" data-enquiries="${d.enquiries}"/>`;
+      }).join('');
+
+      /* X-axis labels */
+      const step = Math.ceil(data.length / 7);
+      document.getElementById('chartXLabels').innerHTML = data.map((d,i) => {
+        if (i % step !== 0 && i !== data.length-1) return '';
+        return `<text class="chart-axis-label" x="${xS(i)}" y="${H-4}" text-anchor="middle">${d.label}</text>`;
+      }).join('');
+
+      /* Tooltip on dots */
+      const tooltip  = document.getElementById('chartTooltip');
+      const chartWrap = document.getElementById('chartWrap');
+      document.querySelectorAll('.chart-dot').forEach(dot => {
+        dot.addEventListener('mouseenter', () => {
+          const svgEl  = dot.closest('svg');
+          const svgRect = svgEl.getBoundingClientRect();
+          const wrapRect = chartWrap.getBoundingClientRect();
+          const cx = parseFloat(dot.getAttribute('cx')) * (svgRect.width  / W);
+          const cy = parseFloat(dot.getAttribute('cy')) * (svgRect.height / H);
+          tooltip.style.left = (svgRect.left - wrapRect.left + cx - 60) + 'px';
+          tooltip.style.top  = (svgRect.top  - wrapRect.top  + cy - 60) + 'px';
+          document.getElementById('tooltipLabel').textContent = dot.dataset.label;
+          document.getElementById('tooltipVal').innerHTML =
+            `\u{1F441} ${dot.dataset.views} views &nbsp; \u{1F4AC} ${dot.dataset.enquiries} enquiries`;
+          tooltip.classList.add('visible');
+        });
+        dot.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+      });
+    }
+
+
+    /* ============================================
+       DONUT CHART
+       ============================================ */
+
+    function renderDonut(sources, total) {
+      const cx=80, cy=80, r=58, stroke=22;
+      const circ = 2 * Math.PI * r;
+      let offset = 0, svg = '';
+      sources.forEach(s => {
+        const dash = (s.pct / 100) * circ;
+        svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+          stroke="${s.color}" stroke-width="${stroke}"
+          stroke-dasharray="${dash} ${circ - dash}"
+          stroke-dashoffset="${-offset}" stroke-linecap="butt"/>`;
+        offset += dash;
+      });
+      document.getElementById('donutGroup').innerHTML = svg;
+      document.getElementById('donutTotal').textContent = total.toLocaleString();
+    }
+
+    function renderSourceList(sources) {
+      document.getElementById('sourceList').innerHTML = sources.map(s => `
+        <div class="source-row">
+          <span class="source-color" style="background:${s.color};"></span>
+          <span class="source-name">${s.name}</span>
+          <span class="source-pct">${s.pct}%</span>
+        </div>
+        <div class="source-bar-wrap">
+          <div class="source-bar" data-pct="${s.pct}" style="background:${s.color};"></div>
+        </div>
+      `).join('');
+    }
+
+
+    /* ============================================
+       PER-LISTING TABLE
+       ============================================ */
+
+    function renderPerfTable(listings) {
+      const totalViews = listings.reduce((s,l) => s + l.views, 0);
+      document.getElementById('perfTableBody').innerHTML = listings.map((l, i) => {
+        const share   = Math.round((l.views / totalViews) * 100);
+        const enqRate = l.views > 0 ? ((l.enquiries / l.views) * 100).toFixed(1) : '0.0';
+        const rateColor = parseFloat(enqRate) >= 3 ? 'var(--green)' : 'var(--mid)';
+        return `
+          <tr>
+            <td>
+              <p class="listing-mini-title">${l.title}</p>
+              <p class="listing-mini-loc">${l.location}</p>
+            </td>
+            <td style="font-weight:500;">${l.views.toLocaleString()}</td>
+            <td>
+              <div class="mini-bar-wrap">
+                <div class="mini-bar-track">
+                  <div class="mini-bar-fill" style="width:${share}%;transition-delay:${i*0.12}s;"></div>
+                </div>
+                <span style="font-size:12px;color:var(--muted);min-width:30px;">${share}%</span>
+              </div>
+            </td>
+            <td style="color:var(--mid);">${l.enquiries}</td>
+            <td><span style="font-size:12px;font-weight:500;color:${rateColor};">${enqRate}%</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function switchPerfTab(btn, metric) {
+      document.querySelectorAll('.an-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      /* In production: re-sort table by the chosen metric */
+    }
+
+
+    /* ============================================
+       HEATMAP (4 weeks × 7 days)
+       ============================================ */
+
+    function renderHeatmap() {
+      const cells = Array.from({ length: 28 }, (_, i) => {
+        /* Boost weekends (indices 5,6,12,13,19,20,26,27) */
+        const isWeekend = [5,6,12,13,19,20,26,27].includes(i);
+        const r = Math.random();
+        if (isWeekend) return ['l3','l4','l5'][Math.floor(Math.random()*3)];
+        if (r > 0.85) return 'l5';
+        if (r > 0.70) return 'l4';
+        if (r > 0.50) return 'l3';
+        if (r > 0.30) return 'l2';
+        if (r > 0.15) return 'l1';
+        return '';
+      });
+      document.getElementById('heatmapGrid').innerHTML = cells.map(cls =>
+        `<div class="hm-cell ${cls}"></div>`
+      ).join('');
+    }
+
+
+    /* ============================================
+       ENQUIRIES LIST
+       ============================================ */
+
+    function renderEnquiries(enquiries) {
+      document.getElementById('enquiryList').innerHTML = enquiries.map(e => `
+        <div class="enquiry-item">
+          <div class="enquiry-avatar">${e.initials}</div>
+          <div class="enquiry-body">
+            <p class="enquiry-name">${e.name}</p>
+            <p class="enquiry-listing">Re: ${e.listing}</p>
+            <p class="enquiry-msg">${e.msg}</p>
+            <p class="enquiry-time">${e.time}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+
+    /* ============================================
+       UTILITY
+       ============================================ */
+
+    function animateCounter(id, target, duration, hasPercentSpan = false) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      let start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        const progress = Math.min((ts - start) / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const val  = Math.floor(ease * target);
+        if (hasPercentSpan) {
+          /* kpi-num that contains a <span> suffix — update only the text node */
+          el.childNodes[0].textContent = val;
+        } else {
+          el.textContent = val.toLocaleString();
+        }
+        if (progress < 1) requestAnimationFrame(step);
+        else {
+          if (hasPercentSpan) el.childNodes[0].textContent = target;
+          else el.textContent = target.toLocaleString();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function setRange(btn, range) {
+      document.querySelectorAll('.date-range-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      /* In production:
+         const token = localStorage.getItem('makao_token');
+         fetch(`/api/host/analytics?range=${range}`, {
+           headers: { Authorization: `Bearer ${token}` }
+         }).then(r => r.json()).then(data => updateCharts(data));
+      */
+      const days = range === '7d' ? 7 : range === '90d' ? 90 : 30;
+      renderLineChart(generateChartData(days));
+    }
+
+    function exportCSV() {
+      /* In production:
+         window.location.href = `/api/host/analytics/export?range=30d`;
+      */
+      alert('CSV export — connect to backend to download real data.');
+    }
+  </script>
+
+</body>
+</html>

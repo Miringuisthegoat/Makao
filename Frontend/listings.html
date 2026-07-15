@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browse Rentals — Makao</title>
+  <meta name="description" content="Browse thousands of rental properties across Kenya. Filter by county, bedrooms, budget and amenities." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/listings.css" />
+  <!-- This explicitly tells the browser there is no favicon for this page -->
+  <link rel="icon" href="data:;base64,=" />
+</head>
+<body class="listings-page">
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar scrolled" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">Makao</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="listings.html" class="active">Rent</a></li>
+        <li><a href="listings.html?type=featured">Featured</a></li>
+        <li><a href="pricing.html">List Property</a></li>
+        <li><a href="index.html#how-it-works">How It Works</a></li>
+      </ul>
+      <div class="nav-auth">
+        <a href="login.html" class="btn-ghost">Become a Host</a>
+      
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="listings.html">Rent</a></li>
+      <li><a href="listings.html?type=featured">Featured</a></li>
+      <li><a href="pricing.html">List Property</a></li>
+      <li><a href="login.html">Log in</a></li>
+      <li><a href="login.html" class="mobile-join">Join Free</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== HERO SECTION ===== -->
+  <header class="listings-hero" style="background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80') no-repeat center center/cover;">
+    <div class="hero-container">
+      <div class="hero-content">
+        <span class="hero-badge">Find Your Next Home</span>
+        <h1>Discover Premium Rentals Across Kenya</h1>
+        <p>From vibrant apartments in Nairobi to scenic villas at the Coast—your perfect space is waiting.</p>
+      
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== PAGE HEADER ===== -->
+  <div class="listings-header">
+    <div class="container">
+      <div class="listings-header-inner">
+        <div>
+          <h2 class="listings-section-title">Rentals in Kenya</h2>
+          <p class="listings-subtitle" id="resultsCount">Loading listings...</p>
+        </div>
+        <!-- Inline search bar -->
+        <div class="listings-search-bar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="inlineSearch" placeholder="Search city, county, neighbourhood..." autocomplete="off" />
+          <button id="inlineSearchClear" class="search-clear" aria-label="Clear search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Active filters row -->
+      <div class="active-filters" id="activeFilters"></div>
+    </div>
+  </div>
+
+  <!-- ===== TOOLBAR ===== -->
+  <div class="listings-toolbar">
+    <div class="container">
+      <div class="toolbar-inner">
+        <!-- Sort -->
+        <div class="toolbar-left">
+          <button class="filter-toggle-btn" id="filterToggleBtn" aria-expanded="false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+            Filters
+            <span class="filter-count-badge" id="filterCountBadge" style="display:none;">0</span>
+          </button>
+          <div class="sort-wrap">
+            <label for="sortSelect" class="sort-label">Sort by:</label>
+            <select id="sortSelect" class="sort-select">
+              <option value="newest">Newest first</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="featured">Featured first</option>
+              <option value="popular">Most viewed</option>
+            </select>
+          </div>
+        </div>
+        <!-- View toggle -->
+        <div class="view-toggle">
+          <button class="view-btn active" id="gridViewBtn" aria-label="Grid view" title="Grid view">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
+          <button class="view-btn" id="listViewBtn" aria-label="List view" title="List view">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MAIN LAYOUT ===== -->
+  <div class="listings-layout" id="listingsLayout">
+
+    <!-- ===== SIDEBAR FILTERS ===== -->
+    <aside class="filters-sidebar" id="filtersSidebar">
+      <div class="sidebar-inner">
+
+        <div class="sidebar-header">
+          <h2>Filters</h2>
+          <button class="clear-all-btn" id="clearAllBtn">Clear all</button>
+        </div>
+
+        <!-- County / Location -->
+        <div class="filter-group">
+          <h3 class="filter-label">County</h3>
+          <div class="county-search-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="countySearch" placeholder="Search county..." />
+          </div>
+          <div class="county-list" id="countyList">
+            <label class="filter-check"><input type="checkbox" name="county" value="nairobi" /> Nairobi <span class="check-count">0</span></label>
+            <label class="filter-check"><input type="checkbox" name="county" value="mombasa" /> Mombasa <span class="check-count">0</span></label>
+            <label class="filter-check"><input type="checkbox" name="county" value="kisumu" /> Kisumu <span class="check-count">0</span></label>
+            <label class="filter-check"><input type="checkbox" name="county" value="nakuru" /> Nakuru <span class="check-count">0</span></label>
+            <label class="filter-check"><input type="checkbox" name="county" value="eldoret" /> Eldoret <span class="check-count">0</span></label>
+            <label class="filter-check"><input type="checkbox" name="county" value="thika" /> Thika <span class="check-count">0</span></label>
+            <label class="filter-check"><input type="checkbox" name="county" value="nyeri" /> Nyeri <span class="check-count">0</span></label>
+            <label class="filter-check"><input type="checkbox" name="county" value="machakos" /> Machakos <span class="check-count">0</span></label>
+            <label class="filter-check"><input type="checkbox" name="county" value="meru" /> Meru <span class="check-count">0</span></label>
+            <label class="filter-check"><input type="checkbox" name="county" value="kakamega" /> Kakamega <span class="check-count">0</span></label>
+          </div>
+          <button class="show-more-btn" id="countyShowMore">Show all counties ↓</button>
+        </div>
+
+        <!-- Budget Range -->
+        <div class="filter-group">
+          <h3 class="filter-label">Monthly Rent (KES)</h3>
+          <div class="budget-inputs">
+            <div class="budget-field">
+              <label>Min</label>
+              <input type="number" id="minPrice" placeholder="0" min="0" step="1000" />
+            </div>
+            <div class="budget-dash">—</div>
+            <div class="budget-field">
+              <label>Max</label>
+              <input type="number" id="maxPrice" placeholder="Any" min="0" step="1000" />
+            </div>
+          </div>
+          <div class="budget-presets">
+            <button class="preset-btn" data-min="0" data-max="15000">Under 15K</button>
+            <button class="preset-btn" data-min="15000" data-max="30000">15K–30K</button>
+            <button class="preset-btn" data-min="30000" data-max="60000">30K–60K</button>
+            <button class="preset-btn" data-min="60000" data-max="100000">60K–100K</button>
+            <button class="preset-btn" data-min="100000" data-max="">100K+</button>
+          </div>
+        </div>
+
+        <!-- Bedrooms -->
+        <div class="filter-group">
+          <h3 class="filter-label">Bedrooms</h3>
+          <div class="bed-bath-pills" id="bedroomPills">
+            <button class="pill-btn active" data-val="">Any</button>
+            <button class="pill-btn" data-val="0">Studio</button>
+            <button class="pill-btn" data-val="1">1</button>
+            <button class="pill-btn" data-val="2">2</button>
+            <button class="pill-btn" data-val="3">3</button>
+            <button class="pill-btn" data-val="4">4+</button>
+          </div>
+        </div>
+
+        <!-- Bathrooms -->
+        <div class="filter-group">
+          <h3 class="filter-label">Bathrooms</h3>
+          <div class="bed-bath-pills" id="bathroomPills">
+            <button class="pill-btn active" data-val="">Any</button>
+            <button class="pill-btn" data-val="1">1</button>
+            <button class="pill-btn" data-val="2">2</button>
+            <button class="pill-btn" data-val="3">3+</button>
+          </div>
+        </div>
+
+        <!-- Property Type -->
+        <div class="filter-group">
+          <h3 class="filter-label">Property Type</h3>
+          <div class="filter-checks">
+            <label class="filter-check"><input type="checkbox" name="type" value="bedsitter" /> Bedsitter</label>
+            <label class="filter-check"><input type="checkbox" name="type" value="apartment" /> Apartment</label>
+            <label class="filter-check"><input type="checkbox" name="type" value="bungalow" /> Bungalow</label>
+            <label class="filter-check"><input type="checkbox" name="type" value="maisonette" /> Maisonette</label>
+            <label class="filter-check"><input type="checkbox" name="type" value="townhouse" /> Townhouse</label>
+            <label class="filter-check"><input type="checkbox" name="type" value="villa" /> Villa</label>
+            <label class="filter-check"><input type="checkbox" name="type" value="studio" /> Studio</label>
+          </div>
+        </div>
+
+        <!-- Amenities -->
+        <div class="filter-group">
+          <h3 class="filter-label">Amenities</h3>
+          <div class="filter-checks">
+            <label class="filter-check"><input type="checkbox" name="amenity" value="parking" /> Parking</label>
+            <label class="filter-check"><input type="checkbox" name="amenity" value="wifi" /> WiFi Included</label>
+            <label class="filter-check"><input type="checkbox" name="amenity" value="security" /> 24hr Security</label>
+            <label class="filter-check"><input type="checkbox" name="amenity" value="gym" /> Gym</label>
+            <label class="filter-check"><input type="checkbox" name="amenity" value="pool" /> Swimming Pool</label>
+            <label class="filter-check"><input type="checkbox" name="amenity" value="garden" /> Garden</label>
+            <label class="filter-check"><input type="checkbox" name="amenity" value="borehole" /> Borehole Water</label>
+            <label class="filter-check"><input type="checkbox" name="amenity" value="generator" /> Backup Generator</label>
+            <label class="filter-check"><input type="checkbox" name="amenity" value="cctv" /> CCTV</label>
+            <label class="filter-check"><input type="checkbox" name="amenity" value="furnished" /> Furnished</label>
+          </div>
+        </div>
+
+        <!-- Listing Type -->
+        <div class="filter-group">
+          <h3 class="filter-label">Host Type</h3>
+          <div class="filter-checks">
+            <label class="filter-check"><input type="checkbox" name="host_type" value="agency" /> Verified Agencies only</label>
+            <label class="filter-check"><input type="checkbox" name="host_type" value="landlord" /> Individual Landlords</label>
+          </div>
+        </div>
+
+        <!-- Availability -->
+        <div class="filter-group">
+          <h3 class="filter-label">Availability</h3>
+          <div class="filter-checks">
+            <label class="filter-check"><input type="checkbox" name="availability" value="now" /> Available now</label>
+            <label class="filter-check"><input type="checkbox" name="availability" value="month" /> Available this month</label>
+          </div>
+        </div>
+
+        <button class="apply-filters-btn" id="applyFiltersBtn">
+          Apply Filters
+        </button>
+      </div>
+    </aside>
+
+    <!-- ===== LISTINGS MAIN ===== -->
+    <main class="listings-main" id="listingsMain">
+
+      <!-- No results -->
+      <div class="no-results" id="noResults" style="display:none;">
+        <div class="no-results-inner">
+          <div class="no-results-icon">🏠</div>
+          <h3>No listings found</h3>
+          <p>Try adjusting your filters or searching a different location.</p>
+          <button class="btn-dark" onclick="clearAllFilters()">Clear all filters</button>
+        </div>
+      </div>
+
+      <!-- Grid container -->
+      <div class="listings-grid-view" id="listingsGrid"></div>
+
+      <!-- List container -->
+      <div class="listings-list-view" id="listingsList" style="display:none;"></div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination"></div>
+
+    </main>
+  </div>
+
+  <!-- ===== MOBILE FILTER DRAWER ===== -->
+  <div class="mobile-filter-overlay" id="mobileFilterOverlay"></div>
+
+  <!-- ===== CHATBOT FAB ===== -->
+  <div class="chatbot-fab" id="chatbotFab" aria-label="Open AI assistant">
+    <div class="fab-inner">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <span class="fab-label">AI search</span>
+    <span class="fab-pulse"></span>
+  </div>
+
+  <!-- Chatbot drawer (same as index) -->
+  <div class="chatbot-drawer" id="chatbotDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title-row">
+        <div class="drawer-avatar">🏠</div>
+        <div>
+          <p class="drawer-name">Makao AI</p>
+          <p class="drawer-status">● Online — ready to help</p>
+        </div>
+      </div>
+      <button class="drawer-close" id="drawerClose" aria-label="Close chat">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-messages" id="drawerMessages">
+      <div class="msg bot-msg">
+        <p>Tell me what you're looking for and I'll filter these listings for you automatically. 🔍</p>
+      </div>
+    </div>
+    <div class="drawer-input-row">
+      <input type="text" id="chatInput" placeholder="e.g. 2-bed furnished in Kilimani, under 50K..." autocomplete="off" />
+      <button id="chatSend" aria-label="Send">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/listings-page.js"></script>
+  <script src="js/chatbot.js"></script>
+</body>
+</html>

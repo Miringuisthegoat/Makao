@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Failed — Makao</title>
+  <meta name="description" content="Something went wrong with your payment. Try again or choose a different method." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+
+    /* ===== PAGE BASE ===== */
+    body { background: var(--off-white); min-height: 100vh; }
+
+    .navbar {
+      background: var(--dark);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* ===== LAYOUT ===== */
+    .failed-page {
+      padding-top: calc(var(--nav-h) + 56px);
+      padding-bottom: 80px;
+      min-height: 100vh;
+    }
+
+    .failed-container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ===== HERO CARD ===== */
+    .failed-hero {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    /* Red top stripe */
+    .failed-stripe {
+      height: 6px;
+      background: linear-gradient(90deg, #b71c1c, #ef5350, #e57373);
+      background-size: 200% 100%;
+      animation: stripeShimmer 3s ease infinite;
+    }
+    @keyframes stripeShimmer {
+      0%   { background-position: 0% 0%; }
+      50%  { background-position: 100% 0%; }
+      100% { background-position: 0% 0%; }
+    }
+
+    .failed-hero-body {
+      padding: 52px 48px 48px;
+      text-align: center;
+    }
+
+    /* ===== X ICON ANIMATION ===== */
+    .fail-icon-wrap {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 30px;
+      position: relative;
+    }
+
+    .fail-circle {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: #fdecea;
+      border: 3px solid #ef5350;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: circleShake 0.55s cubic-bezier(0.36,0.07,0.19,0.97) both;
+    }
+    @keyframes circleShake {
+      0%   { transform: scale(0); opacity: 0; }
+      40%  { transform: scale(1.08); opacity: 1; }
+      60%  { transform: scale(0.96) rotate(-4deg); }
+      80%  { transform: scale(1.02) rotate(3deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .fail-x {
+      width: 38px;
+      height: 38px;
+    }
+    .fail-line-1,
+    .fail-line-2 {
+      stroke: #ef5350;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      fill: none;
+      stroke-dasharray: 30;
+      stroke-dashoffset: 30;
+    }
+    .fail-line-1 { animation: drawLine 0.28s 0.4s ease forwards; }
+    .fail-line-2 { animation: drawLine 0.28s 0.58s ease forwards; }
+    @keyframes drawLine {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* ===== HERO TEXT ===== */
+    .failed-eyebrow {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #c62828;
+      margin-bottom: 10px;
+      animation: fadeUp 0.4s 0.5s ease both;
+    }
+
+    .failed-title {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 5vw, 58px);
+      color: var(--dark);
+      letter-spacing: 0.5px;
+      line-height: 1.05;
+      margin-bottom: 14px;
+      animation: fadeUp 0.4s 0.6s ease both;
+    }
+
+    .failed-subtitle {
+      font-size: 16px;
+      color: var(--mid);
+      line-height: 1.65;
+      max-width: 460px;
+      margin: 0 auto 32px;
+      animation: fadeUp 0.4s 0.7s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== REASON PILL ===== */
+    .reason-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #fdecea;
+      border: 1.5px solid #ffcdd2;
+      color: #c62828;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 20px;
+      border-radius: 50px;
+      margin-bottom: 32px;
+      animation: fadeUp 0.4s 0.75s ease both;
+    }
+
+    /* ===== PRIMARY CTA BUTTONS ===== */
+    .retry-ctas {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      animation: fadeUp 0.4s 0.85s ease both;
+    }
+
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--accent);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 500;
+      padding: 13px 26px;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .btn-retry:hover {
+      background: var(--accent-light);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(200,82,42,0.3);
+    }
+
+    .btn-alt-method {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: transparent;
+      color: var(--mid);
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 400;
+      padding: 13px 26px;
+      border-radius: 50px;
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .btn-alt-method:hover { border-color: var(--dark); color: var(--dark); }
+
+    /* ===== WHAT WENT WRONG CARD ===== */
+    .reason-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.4s 0.35s ease both;
+    }
+
+    .reason-card-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--dark);
+      letter-spacing: 0.3px;
+      margin-bottom: 20px;
+    }
+
+    .reason-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .reason-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      opacity: 0.45;
+      transition: opacity var(--transition);
+    }
+    .reason-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .reason-item.active { opacity: 1; }
+
+    .reason-item-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--off-white);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--muted);
+    }
+    .reason-item.active .reason-item-icon {
+      background: #fdecea;
+      border-color: #ffcdd2;
+      color: #ef5350;
+    }
+
+    .reason-item-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 3px;
+    }
+    .reason-item-text p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ===== TRY ANOTHER METHOD ===== */
+    .methods-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 24px;
+      animation: fadeUp 0.4s 0.4s ease both;
+    }
+
+    .methods-card-header {
+      padding: 22px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+    .methods-card-header h3 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--dark);
+      letter-spacing: 0.3px;
+    }
+    .methods-card-header p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .method-options { padding: 12px 16px; }
+
+    .method-btn {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      width: 100%;
+      padding: 16px 16px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      transition: background var(--transition);
+      font-family: var(--font-body);
+    }
+    .method-btn:hover { background: var(--off-white); }
+    .method-btn + .method-btn {
+      border-top: 1px solid var(--border);
+      border-radius: 0;
+    }
+    .method-btn:last-child { border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+
+    .method-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .method-icon.mpesa   { background: #e8f5e9; color: #2e7d32; }
+    .method-icon.card    { background: #e3f2fd; color: #1565c0; }
+    .method-icon.paypal  { background: #e8eaf6; color: #283593; }
+
+    .method-btn-text { flex: 1; }
+    .method-btn-text strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 2px;
+    }
+    .method-btn-text span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .method-arrow {
+      color: var(--muted);
+      transition: transform var(--transition), color var(--transition);
+    }
+    .method-btn:hover .method-arrow {
+      transform: translateX(4px);
+      color: var(--accent);
+    }
+
+    /* Current method badge */
+    .method-used-badge {
+      font-size: 11px;
+      font-weight: 500;
+      background: #fdecea;
+      color: #c62828;
+      padding: 3px 10px;
+      border-radius: 50px;
+      border: 1px solid #ffcdd2;
+      flex-shrink: 0;
+    }
+
+    /* ===== ATTEMPT LOG ===== */
+    .attempt-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.4s 0.45s ease both;
+    }
+
+    .attempt-card-title {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .attempt-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .attempt-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .attempt-row .a-label { color: var(--muted); }
+    .attempt-row .a-value { color: var(--dark); font-weight: 500; }
+    .attempt-row .a-fail  { color: #ef5350; font-weight: 500; }
+
+    /* ===== HELP CARD ===== */
+    .help-card {
+      background: var(--dark);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      animation: fadeUp 0.4s 0.5s ease both;
+    }
+
+    .help-icon {
+      width: 50px;
+      height: 50px;
+      background: rgba(200,82,42,0.15);
+      border: 1px solid rgba(200,82,42,0.3);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ff8055;
+      flex-shrink: 0;
+    }
+
+    .help-text { flex: 1; }
+    .help-text strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .help-text p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.5;
+    }
+
+    .btn-contact {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 400;
+      padding: 10px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .btn-contact:hover {
+      background: rgba(255,255,255,0.18);
+      border-color: rgba(255,255,255,0.35);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .failed-hero-body { padding: 40px 24px 36px; }
+      .reason-card { padding: 22px 20px; }
+      .methods-card-header { padding: 18px 20px; }
+      .method-btn { padding: 14px 12px; gap: 14px; }
+      .attempt-card { padding: 20px; }
+      .help-card { flex-direction: column; text-align: center; padding: 24px 20px; }
+      .btn-contact { width: 100%; justify-content: center; }
+    }
+
+    @media (max-width: 480px) {
+      .retry-ctas { flex-direction: column; }
+      .btn-retry,
+      .btn-alt-method { width: 100%; justify-content: center; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">Makao</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="listings.html">Rent</a></li>
+        <li><a href="pricing.html">List Property</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+      </ul>
+      <div class="nav-auth">
+        <a href="dashboard.html" class="btn-ghost">My Dashboard</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="listings.html">Rent</a></li>
+      <li><a href="pricing.html">List Property</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== PAGE ===== -->
+  <div class="failed-page">
+    <div class="failed-container">
+
+      <!-- ── HERO CARD ── -->
+      <div class="failed-hero">
+        <div class="failed-stripe"></div>
+        <div class="failed-hero-body">
+
+          <!-- Animated X icon -->
+          <div class="fail-icon-wrap">
+            <div class="fail-circle">
+              <svg class="fail-x" viewBox="0 0 44 44">
+                <line class="fail-line-1" x1="12" y1="12" x2="32" y2="32" />
+                <line class="fail-line-2" x1="32" y1="12" x2="12" y2="32" />
+              </svg>
+            </div>
+          </div>
+
+          <p class="failed-eyebrow">Payment unsuccessful</p>
+          <h1 class="failed-title" id="failedTitle">Payment failed</h1>
+          <p class="failed-subtitle" id="failedSubtitle">
+            Your listing has not been activated. No money has been charged.
+            Please try again below.
+          </p>
+
+          <!-- Dynamic reason pill -->
+          <div class="reason-pill" id="reasonPill">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="reasonPillText">Unknown error</span>
+          </div>
+
+          <!-- CTAs -->
+          <div class="retry-ctas">
+            <button class="btn-retry" id="retryBtn" onclick="retryPayment()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              <span id="retryBtnLabel">Try Again</span>
+            </button>
+            <a href="payment-method.html" class="btn-alt-method">
+              Choose different method
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── WHAT WENT WRONG ── -->
+      <div class="reason-card">
+        <h2 class="reason-card-title">What went wrong?</h2>
+        <div class="reason-list">
+
+          <div class="reason-item" id="reasonCancelled">
+            <div class="reason-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <div class="reason-item-text">
+              <strong>Payment was cancelled</strong>
+              <p>You dismissed the M-Pesa prompt or pressed cancel on your phone before entering your PIN.</p>
+            </div>
+          </div>
+
+          <div class="reason-item" id="reasonTimeout">
+            <div class="reason-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="reason-item-text">
+              <strong>Session timed out</strong>
+              <p>The payment window expired before confirmation was received. M-Pesa prompts expire after 2 minutes.</p>
+            </div>
+          </div>
+
+          <div class="reason-item" id="reasonFunds">
+            <div class="reason-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="reason-item-text">
+              <strong>Insufficient funds</strong>
+              <p>Your M-Pesa or card balance was too low to complete the transaction.</p>
+            </div>
+          </div>
+
+          <div class="reason-item" id="reasonNetwork">
+            <div class="reason-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+            </div>
+            <div class="reason-item-text">
+              <strong>Network or connection error</strong>
+              <p>A network disruption prevented the payment from being processed. This is usually temporary.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── TRY ANOTHER METHOD ── -->
+      <div class="methods-card">
+        <div class="methods-card-header">
+          <h3>Try a different payment method</h3>
+          <p>Your listing details are saved — just pick a new way to pay.</p>
+        </div>
+        <div class="method-options">
+
+          <button class="method-btn" id="methodMpesa" onclick="chooseMethod('mpesa')">
+            <div class="method-icon mpesa">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            </div>
+            <div class="method-btn-text">
+              <strong>M-Pesa</strong>
+              <span>Safaricom STK Push — pay from any M-Pesa number</span>
+            </div>
+            <span class="method-used-badge" id="mpesaBadge" style="display:none;">Last used</span>
+            <svg class="method-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+
+          <button class="method-btn" id="methodCard" onclick="chooseMethod('stripe_card')">
+            <div class="method-icon card">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div class="method-btn-text">
+              <strong>Visa / Mastercard / Amex</strong>
+              <span>Secure card payment via Stripe</span>
+            </div>
+            <span class="method-used-badge" id="cardBadge" style="display:none;">Last used</span>
+            <svg class="method-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+
+          <button class="method-btn" id="methodPaypal" onclick="chooseMethod('stripe_paypal')">
+            <div class="method-icon paypal">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+            </div>
+            <div class="method-btn-text">
+              <strong>PayPal</strong>
+              <span>Pay via PayPal — powered by Stripe</span>
+            </div>
+            <span class="method-used-badge" id="paypalBadge" style="display:none;">Last used</span>
+            <svg class="method-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- ── ATTEMPT LOG ── -->
+      <div class="attempt-card">
+        <p class="attempt-card-title">Failed Attempt Details</p>
+        <div class="attempt-row">
+          <span class="a-label">Reference</span>
+          <span class="a-value" id="attemptRef" style="font-family:monospace; font-size:13px;">—</span>
+        </div>
+        <div class="attempt-row">
+          <span class="a-label">Method attempted</span>
+          <span class="a-value" id="attemptMethod">—</span>
+        </div>
+        <div class="attempt-row">
+          <span class="a-label">Time</span>
+          <span class="a-value" id="attemptTime">—</span>
+        </div>
+        <div class="attempt-row">
+          <span class="a-label">Amount</span>
+          <span class="a-value" id="attemptAmount">—</span>
+        </div>
+        <div class="attempt-row">
+          <span class="a-label">Status</span>
+          <span class="a-fail">✕ Not charged</span>
+        </div>
+      </div>
+
+      <!-- ── HELP CARD ── -->
+      <div class="help-card">
+        <div class="help-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="help-text">
+          <strong>Still having trouble?</strong>
+          <p>Our team is here to help you get your listing live. Reach us on WhatsApp or email and we'll sort it out.</p>
+        </div>
+        <a href="https://wa.me/254700000000" target="_blank" class="btn-contact">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          Contact Support
+        </a>
+      </div>
+
+    </div>
+  </div><!-- /failed-page -->
+
+  <script src="js/main.js"></script>
+  <script>
+    /* =============================================
+       payment-failed.html
+       Reads failure context from URL params and
+       sessionStorage to surface the right message
+       and retry route.
+
+       URL params:
+         ?reason=cancelled | timeout | failed | insufficient_funds | network
+
+       sessionStorage keys read:
+         makao_pay_method      — which method was tried
+         makao_package_price   — amount attempted
+         makao_checkout_id     — M-Pesa checkout request ID (if mpesa)
+    ============================================= */
+
+    // ── Parse failure reason from URL ────────────
+    const params  = new URLSearchParams(window.location.search);
+    const reason  = params.get('reason') || 'failed';
+    const payMethod = sessionStorage.getItem('makao_pay_method') || 'mpesa';
+    const pkgPrice  = sessionStorage.getItem('makao_package_price');
+
+    // ── Reason copy map ───────────────────────────
+    const reasonConfig = {
+      cancelled: {
+        title:    'Payment cancelled',
+        subtitle: 'You cancelled the M-Pesa prompt. No money was charged. Tap "Try Again" to resend the request.',
+        pill:     'Cancelled by user',
+        active:   'reasonCancelled'
+      },
+      timeout: {
+        title:    'Request timed out',
+        subtitle: 'The M-Pesa prompt expired before you confirmed. No money was charged. Try again — it only takes seconds.',
+        pill:     'Session timed out',
+        active:   'reasonTimeout'
+      },
+      insufficient_funds: {
+        title:    'Insufficient funds',
+        subtitle: 'Your account balance was too low to complete the payment. Top up your M-Pesa or try a card.',
+        pill:     'Insufficient funds',
+        active:   'reasonFunds'
+      },
+      network: {
+        title:    'Network error',
+        subtitle: 'A connection issue prevented the payment. No money was charged. Please check your network and try again.',
+        pill:     'Network error',
+        active:   'reasonNetwork'
+      },
+      failed: {
+        title:    'Payment failed',
+        subtitle: 'Something went wrong processing your payment. No money was charged. Please try again or use a different method.',
+        pill:     'Payment declined',
+        active:   null
+      }
+    };
+
+    const cfg = reasonConfig[reason] || reasonConfig.failed;
+
+    // ── Apply dynamic copy ────────────────────────
+    document.getElementById('failedTitle').textContent    = cfg.title;
+    document.getElementById('failedSubtitle').textContent = cfg.subtitle;
+    document.getElementById('reasonPillText').textContent = cfg.pill;
+
+    // Highlight the matching reason row
+    if (cfg.active) {
+      document.getElementById(cfg.active).classList.add('active');
+    }
+
+    // ── "Last used" badge on the method that failed ──
+    const badgeMap = {
+      mpesa:         'mpesaBadge',
+      stripe_card:   'cardBadge',
+      stripe_paypal: 'paypalBadge'
+    };
+    const badgeId = badgeMap[payMethod];
+    if (badgeId) document.getElementById(badgeId).style.display = 'inline-flex';
+
+    // ── Retry button label & destination ─────────
+    const retryDestMap = {
+      mpesa:         'payment-mpesa.html',
+      stripe_card:   'payment-method.html?method=card',
+      stripe_paypal: 'payment-method.html?method=paypal'
+    };
+    const retryLabelMap = {
+      mpesa:         'Retry with M-Pesa',
+      stripe_card:   'Retry with Card',
+      stripe_paypal: 'Retry with PayPal'
+    };
+
+    // For insufficient funds, nudge toward a different method
+    if (reason === 'insufficient_funds') {
+      document.getElementById('retryBtnLabel').textContent = 'Try a Different Method';
+      document.getElementById('retryBtn').onclick = () => {
+        window.location.href = 'payment-method.html';
+      };
+    } else {
+      document.getElementById('retryBtnLabel').textContent =
+        retryLabelMap[payMethod] || 'Try Again';
+    }
+
+    // ── Populate attempt log ──────────────────────
+    const methodLabels = {
+      mpesa:         'M-Pesa (Safaricom)',
+      stripe_card:   'Visa / Mastercard',
+      stripe_paypal: 'PayPal'
+    };
+
+    document.getElementById('attemptRef').textContent    =
+      sessionStorage.getItem('makao_checkout_id') || generateRef();
+    document.getElementById('attemptMethod').textContent =
+      methodLabels[payMethod] || payMethod;
+    document.getElementById('attemptTime').textContent   = formatDate(new Date());
+    document.getElementById('attemptAmount').textContent =
+      pkgPrice ? `KES ${Number(pkgPrice).toLocaleString()}` : '—';
+
+    // ── Method selection ──────────────────────────
+    function chooseMethod(method) {
+      // Preserve payment context, update method choice
+      sessionStorage.setItem('makao_pay_method', method);
+      const dest = {
+        mpesa:         'payment-mpesa.html',
+        stripe_card:   'payment-method.html?method=card',
+        stripe_paypal: 'payment-method.html?method=paypal'
+      };
+      window.location.href = dest[method] || 'payment-method.html';
+    }
+
+    // ── Retry same method ─────────────────────────
+    function retryPayment() {
+      window.location.href = retryDestMap[payMethod] || 'payment-method.html';
+    }
+
+    // ── Helpers ───────────────────────────────────
+    function formatDate(d) {
+      return d.toLocaleDateString('en-KE', {
+        day: 'numeric', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function generateRef() {
+      return 'MKO-ERR-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pay via M-Pesa — Makao</title>
+  <meta name="description" content="Complete your listing payment securely via Safaricom M-Pesa." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+
+    /* ===== PAGE SHELL ===== */
+    body {
+      background: var(--off-white);
+      min-height: 100vh;
+    }
+
+    /* Always-dark navbar for non-hero pages */
+    .navbar {
+      background: var(--dark);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    /* ===== PAYMENT PAGE LAYOUT ===== */
+    .pay-page {
+      padding-top: calc(var(--nav-h) + 48px);
+      padding-bottom: 72px;
+      min-height: 100vh;
+    }
+
+    .pay-container {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 32px;
+      align-items: start;
+    }
+
+    /* ===== BREADCRUMB ===== */
+    .breadcrumb {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .breadcrumb a { color: var(--muted); transition: color var(--transition); }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb .sep {
+      color: var(--border);
+      font-size: 16px;
+      line-height: 1;
+    }
+    .breadcrumb .current { color: var(--dark); font-weight: 500; }
+
+    /* ===== MAIN CARD ===== */
+    .pay-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .pay-card-header {
+      background: var(--dark);
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .mpesa-logo-block {
+      width: 56px;
+      height: 56px;
+      background: #4caf50;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: var(--font-display);
+      font-size: 13px;
+      color: var(--white);
+      letter-spacing: 0.5px;
+      text-align: center;
+      line-height: 1.2;
+      padding: 4px;
+    }
+
+    .pay-header-text h1 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--white);
+      letter-spacing: 0.5px;
+      line-height: 1;
+      margin-bottom: 5px;
+    }
+    .pay-header-text p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .pay-card-body {
+      padding: 36px 32px;
+    }
+
+    /* ===== STEPS INDICATOR ===== */
+    .steps-indicator {
+      display: flex;
+      align-items: center;
+      margin-bottom: 36px;
+    }
+    .step-dot {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .step-dot.active { color: var(--dark); font-weight: 500; }
+    .step-dot.done { color: var(--green); }
+    .step-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+    .step-dot.active .step-circle {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--white);
+    }
+    .step-dot.done .step-circle {
+      border-color: var(--green);
+      background: var(--green);
+      color: var(--white);
+    }
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      margin: 0 10px;
+    }
+    .step-line.done { background: var(--green); }
+
+    /* ===== FORM ===== */
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 8px;
+      letter-spacing: 0.2px;
+    }
+    .form-label span {
+      color: var(--muted);
+      font-weight: 400;
+      margin-left: 4px;
+    }
+
+    .phone-input-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      transition: border-color var(--transition);
+    }
+    .phone-input-wrap:focus-within {
+      border-color: #4caf50;
+      box-shadow: 0 0 0 3px rgba(76,175,80,0.12);
+    }
+
+    .phone-prefix {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      background: #f5f5f5;
+      border-right: 1.5px solid var(--border);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dark);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .phone-prefix .flag { font-size: 18px; }
+
+    .phone-input-wrap input {
+      flex: 1;
+      border: none;
+      outline: none;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-family: var(--font-body);
+      color: var(--dark);
+      background: var(--white);
+      letter-spacing: 0.5px;
+    }
+    .phone-input-wrap input::placeholder { color: #bbb; font-size: 15px; }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 7px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ===== STK PROMPT INFO ===== */
+    .stk-info {
+      background: #f0faf1;
+      border: 1px solid #c8e6c9;
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      margin: 28px 0;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .stk-info-icon {
+      width: 36px;
+      height: 36px;
+      background: #4caf50;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--white);
+    }
+    .stk-info-text strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1b5e20;
+      margin-bottom: 3px;
+    }
+    .stk-info-text p {
+      font-size: 13px;
+      color: #388e3c;
+      line-height: 1.5;
+    }
+
+    /* ===== TERMS ===== */
+    .terms-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 24px 0;
+    }
+    .terms-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      accent-color: #4caf50;
+      cursor: pointer;
+    }
+    .terms-row label {
+      font-size: 13px;
+      color: var(--mid);
+      line-height: 1.55;
+      cursor: pointer;
+    }
+    .terms-row label a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* ===== SUBMIT BUTTON ===== */
+    .btn-mpesa {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: #4caf50;
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-weight: 500;
+      padding: 16px 28px;
+      border-radius: var(--radius-sm);
+      border: none;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-mpesa:hover:not(:disabled) {
+      background: #43a047;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(76,175,80,0.35);
+    }
+    .btn-mpesa:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-mpesa .btn-arrow {
+      transition: transform var(--transition);
+    }
+    .btn-mpesa:hover:not(:disabled) .btn-arrow {
+      transform: translateX(3px);
+    }
+
+    .security-note {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ===== WAITING STATE ===== */
+    .waiting-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 48px 32px;
+    }
+    .waiting-overlay.visible { display: flex; }
+    .form-body.hidden { display: none; }
+
+    .phone-pulse {
+      width: 80px;
+      height: 80px;
+      background: #4caf50;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+      position: relative;
+      animation: phonePop 0.4s ease both;
+    }
+    @keyframes phonePop {
+      from { transform: scale(0.6); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .phone-pulse::before,
+    .phone-pulse::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      border: 2px solid rgba(76,175,80,0.4);
+      animation: ripple 2s ease-out infinite;
+    }
+    .phone-pulse::after { animation-delay: 0.7s; }
+    @keyframes ripple {
+      0% { width: 80px; height: 80px; opacity: 1; }
+      100% { width: 160px; height: 160px; opacity: 0; }
+    }
+
+    .waiting-title {
+      font-family: var(--font-display);
+      font-size: 30px;
+      color: var(--dark);
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .waiting-desc {
+      font-size: 15px;
+      color: var(--mid);
+      line-height: 1.6;
+      max-width: 320px;
+      margin: 0 auto 28px;
+    }
+    .waiting-phone-num {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--dark);
+      letter-spacing: 1px;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      width: 100%;
+      max-width: 300px;
+      background: var(--border);
+      border-radius: 50px;
+      height: 5px;
+      margin: 20px auto 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #4caf50;
+      border-radius: 50px;
+      width: 0%;
+      animation: progressFill 120s linear forwards;
+    }
+    @keyframes progressFill {
+      0%   { width: 0%; }
+      90%  { width: 90%; }
+      100% { width: 90%; }
+    }
+
+    .waiting-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 24px auto 0;
+      width: 100%;
+      max-width: 300px;
+      text-align: left;
+    }
+    .w-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      transition: color 0.3s;
+    }
+    .w-step.active { color: var(--dark); }
+    .w-step.done { color: #4caf50; }
+    .w-step-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 10px;
+    }
+    .w-step.active .w-step-icon {
+      border-color: #4caf50;
+      animation: spin 1s linear infinite;
+    }
+    .w-step.done .w-step-icon {
+      border-color: #4caf50;
+      background: #4caf50;
+      color: var(--white);
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .btn-resend {
+      background: none;
+      border: 1.5px solid var(--border);
+      color: var(--mid);
+      font-family: var(--font-body);
+      font-size: 14px;
+      padding: 10px 22px;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .btn-resend:hover { border-color: #4caf50; color: #388e3c; }
+
+    .btn-cancel-txt {
+      background: none;
+      border: none;
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      margin-top: 8px;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .btn-cancel-txt:hover { color: var(--accent); }
+
+    /* ===== ORDER SUMMARY SIDEBAR ===== */
+    .summary-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: sticky;
+      top: calc(var(--nav-h) + 24px);
+    }
+
+    .summary-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .summary-header h3 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--dark);
+      letter-spacing: 0.3px;
+    }
+
+    .summary-body { padding: 20px 24px; }
+
+    .summary-package {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .package-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(200,82,42,0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+    .package-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--dark);
+      margin-bottom: 3px;
+    }
+    .package-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: var(--mid);
+      margin-bottom: 10px;
+    }
+    .summary-line .label { color: var(--mid); }
+    .summary-line .value { color: var(--dark); font-weight: 400; }
+    .summary-line .value.green { color: #388e3c; }
+
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1.5px solid var(--border);
+      margin-top: 8px;
+    }
+    .summary-total .total-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--dark);
+    }
+    .summary-total .total-amount {
+      font-family: var(--font-display);
+      font-size: 26px;
+      color: var(--dark);
+      letter-spacing: 0.5px;
+    }
+    .summary-total .total-amount small {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* Feature bullets in summary */
+    .summary-features {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .summary-features h4 {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--mid);
+      margin-bottom: 8px;
+    }
+    .feature-item svg { color: #4caf50; flex-shrink: 0; }
+
+    /* Secure badge */
+    .secure-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--off-white);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .secure-badge svg { color: var(--green); flex-shrink: 0; }
+
+    /* Other payment method link */
+    .alt-payment {
+      text-align: center;
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .alt-payment a { color: var(--accent); font-weight: 500; }
+    .alt-payment a:hover { text-decoration: underline; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 820px) {
+      .pay-container {
+        grid-template-columns: 1fr;
+      }
+      .summary-card {
+        position: static;
+        order: -1;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .pay-card-header { padding: 22px 20px; }
+      .pay-card-body { padding: 24px 20px; }
+      .summary-body { padding: 16px 20px; }
+      .steps-indicator { font-size: 12px; }
+      .step-dot span { display: none; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">
+        <span class="logo-mark">M</span>
+        <span class="logo-text">Makao</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="listings.html">Rent</a></li>
+        <li><a href="listings.html?type=featured">Featured</a></li>
+        <li><a href="pricing.html">List Property</a></li>
+      </ul>
+      <div class="nav-auth">
+        <a href="dashboard.html" class="btn-ghost">Dashboard</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="listings.html">Rent</a></li>
+      <li><a href="pricing.html">List Property</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+    </ul>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="pay-page">
+    <div class="pay-container">
+
+      <!-- Breadcrumb -->
+      <div class="breadcrumb">
+        <a href="dashboard.html">Dashboard</a>
+        <span class="sep">›</span>
+        <a href="payment-method.html">Choose Payment</a>
+        <span class="sep">›</span>
+        <span class="current">M-Pesa</span>
+      </div>
+
+      <!-- ===== LEFT: PAYMENT FORM ===== -->
+      <div class="pay-card">
+
+        <!-- Card header -->
+        <div class="pay-card-header">
+          <div class="mpesa-logo-block">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
+          <div class="pay-header-text">
+            <h1>Pay via M-Pesa</h1>
+            <p>Safaricom STK Push — secure &amp; instant</p>
+          </div>
+        </div>
+
+        <!-- Card body -->
+        <div class="pay-card-body">
+
+          <!-- Steps indicator -->
+          <div class="steps-indicator">
+            <div class="step-dot done" id="stepDot1">
+              <div class="step-circle">
+                <!-- Checkmark when done -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span>Package</span>
+            </div>
+            <div class="step-line done" id="stepLine1"></div>
+            <div class="step-dot active" id="stepDot2">
+              <div class="step-circle">2</div>
+              <span>Payment</span>
+            </div>
+            <div class="step-line" id="stepLine2"></div>
+            <div class="step-dot" id="stepDot3">
+              <div class="step-circle">3</div>
+              <span>Confirm</span>
+            </div>
+          </div>
+
+          <!-- ===== FORM BODY ===== -->
+          <div class="form-body" id="formBody">
+
+            <label class="form-label" for="mpesaPhone">
+              M-Pesa Phone Number
+              <span>(the number you'll pay from)</span>
+            </label>
+
+            <div class="phone-input-wrap">
+              <div class="phone-prefix">
+                <span class="flag">🇰🇪</span>
+                <span>+254</span>
+              </div>
+              <input
+                type="tel"
+                id="mpesaPhone"
+                placeholder="712 345 678"
+                maxlength="9"
+                autocomplete="tel"
+                inputmode="numeric"
+              />
+            </div>
+            <p class="form-hint">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Enter 9 digits after +254. E.g. 712 345 678
+            </p>
+
+            <!-- STK info box -->
+            <div class="stk-info">
+              <div class="stk-info-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="stk-info-text">
+                <strong>How this works</strong>
+                <p>After you tap "Send Payment Request", Safaricom will send a prompt to your phone. Enter your M-Pesa PIN to complete the payment. Your listing activates instantly.</p>
+              </div>
+            </div>
+
+            <!-- Terms checkbox -->
+            <div class="terms-row">
+              <input type="checkbox" id="termsCheck" />
+              <label for="termsCheck">
+                I agree to Makao's <a href="#">Terms of Service</a> and understand that this is a one-time listing fee. No refunds after listing is activated.
+              </label>
+            </div>
+
+            <!-- Submit button -->
+            <button class="btn-mpesa" id="payBtn" disabled>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              Send M-Pesa Payment Request
+              <svg class="btn-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+
+            <div class="security-note">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Secured by Safaricom Daraja API. We never store your PIN.
+            </div>
+
+          </div><!-- /form-body -->
+
+          <!-- ===== WAITING STATE ===== -->
+          <div class="waiting-overlay" id="waitingOverlay">
+
+            <div class="phone-pulse">
+              <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            </div>
+
+            <h2 class="waiting-title">Check Your Phone</h2>
+            <p class="waiting-desc">We've sent an M-Pesa payment prompt to</p>
+            <p class="waiting-phone-num" id="waitingPhone">+254 712 345 678</p>
+            <p class="waiting-desc" style="margin-top:10px;">Enter your M-Pesa PIN on your phone to complete the payment.</p>
+
+            <div class="progress-wrap">
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="waiting-steps">
+              <div class="w-step done" id="wStep1">
+                <div class="w-step-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                Request sent to Safaricom
+              </div>
+              <div class="w-step active" id="wStep2">
+                <div class="w-step-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                Waiting for your PIN confirmation
+              </div>
+              <div class="w-step" id="wStep3">
+                <div class="w-step-icon">3</div>
+                Listing activation
+              </div>
+            </div>
+
+            <button class="btn-resend" id="resendBtn" onclick="resendPrompt()">
+              Didn't receive prompt? Resend
+            </button>
+            <button class="btn-cancel-txt" onclick="cancelPayment()">Cancel and go back</button>
+
+          </div><!-- /waiting-overlay -->
+
+        </div><!-- /pay-card-body -->
+      </div><!-- /pay-card -->
+
+      <!-- ===== RIGHT: ORDER SUMMARY ===== -->
+      <div class="summary-card">
+        <div class="summary-header">
+          <h3>Order Summary</h3>
+        </div>
+        <div class="summary-body">
+
+          <!-- Package info (populated from sessionStorage) -->
+          <div class="summary-package">
+            <div class="package-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <div>
+              <p class="package-name" id="summaryPackageName">Landlord Package</p>
+              <p class="package-desc" id="summaryPackageDesc">1 listing · 10 photos · Standard visibility</p>
+            </div>
+          </div>
+
+          <div class="summary-line">
+            <span class="label">Package fee</span>
+            <span class="value" id="summaryPrice">—</span>
+          </div>
+          <div class="summary-line" id="boosterRow" style="display:none;">
+            <span class="label" id="boosterLabel">Booster</span>
+            <span class="value" id="boosterPrice">—</span>
+          </div>
+          <div class="summary-line">
+            <span class="label">One-time payment</span>
+            <span class="value green">✓ No recurring fees</span>
+          </div>
+
+          <div class="summary-total">
+            <span class="total-label">Total due</span>
+            <span class="total-amount" id="summaryTotal">
+              — <small>KES</small>
+            </span>
+          </div>
+
+          <!-- Package features -->
+          <div class="summary-features">
+            <h4>What's included</h4>
+            <div class="feature-item" id="featureListings">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              1 property listing
+            </div>
+            <div class="feature-item" id="featurePhotos">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Up to 10 photos
+            </div>
+            <div class="feature-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              AI chatbot included
+            </div>
+            <div class="feature-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Listing stays live until rented
+            </div>
+          </div>
+
+          <!-- Secure badge -->
+          <div class="secure-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Payment secured by Safaricom Daraja API
+          </div>
+
+        </div>
+      </div><!-- /summary-card -->
+
+      <!-- Alt payment link (spans full width on mobile) -->
+      <div class="alt-payment" style="grid-column: 1 / -1;">
+        Want to pay by card or PayPal instead?
+        <a href="payment-method.html">Choose a different method →</a>
+      </div>
+
+    </div><!-- /pay-container -->
+  </div><!-- /pay-page -->
+
+  <script src="js/main.js"></script>
+  <script>
+    /* =============================================
+       payment-mpesa.html — M-Pesa STK Push Logic
+       All pricing is loaded from sessionStorage
+       (set by the package selection page).
+       Backend call: POST /api/payments/mpesa/stk-push
+       Polling:      GET  /api/payments/mpesa/status/:checkoutRequestId
+    ============================================= */
+
+    // ── DOM refs ──────────────────────────────────
+    const phoneInput    = document.getElementById('mpesaPhone');
+    const termsCheck    = document.getElementById('termsCheck');
+    const payBtn        = document.getElementById('payBtn');
+    const formBody      = document.getElementById('formBody');
+    const waitingOverlay= document.getElementById('waitingOverlay');
+    const waitingPhone  = document.getElementById('waitingPhone');
+
+    // ── Load order summary from sessionStorage ────
+    // sessionStorage keys set by pricing/package page:
+    //   makao_package        e.g. "landlord" or "agency"
+    //   makao_package_name   e.g. "Landlord Package"
+    //   makao_package_price  e.g. "0" (set by owner in config.py)
+    //   makao_package_desc   e.g. "1 listing · 10 photos"
+    //   makao_booster        e.g. "" or "homepage_feature"
+    //   makao_booster_name   e.g. "Homepage Feature"
+    //   makao_booster_price  e.g. "0"
+    (function loadSummary() {
+      const pkgName   = sessionStorage.getItem('makao_package_name')  || 'Landlord Package';
+      const pkgDesc   = sessionStorage.getItem('makao_package_desc')  || '1 listing · 10 photos · Standard visibility';
+      const pkgPrice  = sessionStorage.getItem('makao_package_price'); // set by owner; never assumed
+      const booster   = sessionStorage.getItem('makao_booster');
+      const boostName = sessionStorage.getItem('makao_booster_name');
+      const boostPrice= sessionStorage.getItem('makao_booster_price');
+
+      document.getElementById('summaryPackageName').textContent = pkgName;
+      document.getElementById('summaryPackageDesc').textContent = pkgDesc;
+
+      // Prices shown only if they exist in session (set by backend/config.py)
+      if (pkgPrice !== null && pkgPrice !== '') {
+        document.getElementById('summaryPrice').textContent = `KES ${Number(pkgPrice).toLocaleString()}`;
+      }
+
+      // Booster row
+      if (booster && boostName && boostPrice !== null) {
+        document.getElementById('boosterRow').style.display = 'flex';
+        document.getElementById('boosterLabel').textContent = boostName;
+        document.getElementById('boosterPrice').textContent = `KES ${Number(boostPrice).toLocaleString()}`;
+      }
+
+      // Total
+      if (pkgPrice !== null && pkgPrice !== '') {
+        const total = (Number(pkgPrice) || 0) + (boostPrice ? Number(boostPrice) : 0);
+        document.getElementById('summaryTotal').innerHTML =
+          `${total.toLocaleString()} <small>KES</small>`;
+      }
+
+      // Agency-specific features
+      if (sessionStorage.getItem('makao_package') === 'agency') {
+        document.getElementById('featureListings').lastChild.textContent = 'Up to 10 property listings';
+        document.getElementById('featurePhotos').lastChild.textContent   = 'Unlimited photos';
+      }
+    })();
+
+    // ── Phone number formatting ───────────────────
+    phoneInput.addEventListener('input', () => {
+      // Strip non-digits
+      phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 9);
+      validateForm();
+    });
+
+    // ── Terms checkbox ────────────────────────────
+    termsCheck.addEventListener('change', validateForm);
+
+    function validateForm() {
+      const phone = phoneInput.value.replace(/\D/g, '');
+      const valid = phone.length === 9 && termsCheck.checked;
+      payBtn.disabled = !valid;
+    }
+
+    // ── Pay button ────────────────────────────────
+    payBtn.addEventListener('click', initiateSTKPush);
+
+    async function initiateSTKPush() {
+      const rawPhone = phoneInput.value.replace(/\D/g, '');
+      const fullPhone = '254' + rawPhone; // e.g. 254712345678
+
+      payBtn.disabled = true;
+      payBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Sending request…
+      `;
+
+      try {
+        const token  = localStorage.getItem('makao_token');
+        const pkg    = sessionStorage.getItem('makao_package')       || 'landlord';
+        const booster= sessionStorage.getItem('makao_booster')       || '';
+        const listingId = sessionStorage.getItem('makao_listing_id') || '';
+
+        const res = await fetch('/api/payments/mpesa/stk-push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            phone: fullPhone,
+            package_type: pkg,
+            booster: booster || null,
+            listing_id: listingId || null
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.detail || 'Payment request failed. Please try again.');
+        }
+
+        // Switch to waiting UI
+        showWaitingState(rawPhone, data.checkout_request_id);
+
+        // Begin polling for callback result
+        pollPaymentStatus(data.checkout_request_id);
+
+      } catch (err) {
+        showError(err.message);
+        payBtn.disabled  = false;
+        payBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Send M-Pesa Payment Request
+          <svg class="btn-arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        `;
+      }
+    }
+
+    // ── Waiting state UI ──────────────────────────
+    function showWaitingState(rawPhone, checkoutId) {
+      // Format phone for display
+      const formatted = '+254 ' + rawPhone.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
+      waitingPhone.textContent = formatted;
+
+      // Store checkout ID for polling / resend
+      sessionStorage.setItem('makao_checkout_id', checkoutId);
+
+      formBody.classList.add('hidden');
+      waitingOverlay.classList.add('visible');
+    }
+
+    // ── Polling: check payment status every 5s ────
+    let pollTimer  = null;
+    let pollCount  = 0;
+    const MAX_POLLS= 24; // 2 minutes max (24 × 5s)
+
+    function pollPaymentStatus(checkoutId) {
+      pollTimer = setInterval(async () => {
+        pollCount++;
+        if (pollCount > MAX_POLLS) {
+          clearInterval(pollTimer);
+          // Timeout — send to failed page
+          window.location.href = 'payment-failed.html?reason=timeout';
+          return;
+        }
+
+        try {
+          const token = localStorage.getItem('makao_token');
+          const res   = await fetch(`/api/payments/mpesa/status/${checkoutId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+
+          if (data.status === 'confirmed') {
+            clearInterval(pollTimer);
+            // Advance step indicators
+            document.getElementById('wStep2').classList.replace('active','done');
+            document.getElementById('wStep2').querySelector('.w-step-icon').innerHTML =
+              `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+            document.getElementById('wStep3').classList.add('active');
+            setTimeout(() => {
+              window.location.href = 'payment-success.html';
+            }, 800);
+
+          } else if (data.status === 'failed' || data.status === 'cancelled') {
+            clearInterval(pollTimer);
+            window.location.href = `payment-failed.html?reason=${data.status}`;
+          }
+          // If still 'pending' — keep polling
+        } catch (_) {
+          // Network hiccup — keep polling silently
+        }
+      }, 5000);
+    }
+
+    // ── Resend STK prompt ─────────────────────────
+    let resendCooldown = false;
+    function resendPrompt() {
+      if (resendCooldown) return;
+      resendCooldown = true;
+
+      const btn = document.getElementById('resendBtn');
+      btn.disabled    = true;
+      btn.textContent = 'Resending…';
+
+      const token      = localStorage.getItem('makao_token');
+      const checkoutId = sessionStorage.getItem('makao_checkout_id');
+
+      fetch(`/api/payments/mpesa/resend/${checkoutId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).finally(() => {
+        btn.textContent = 'Prompt resent ✓';
+        setTimeout(() => {
+          btn.disabled     = false;
+          btn.textContent  = "Didn't receive prompt? Resend";
+          resendCooldown   = false;
+        }, 30000); // 30s cooldown
+      });
+    }
+
+    // ── Cancel ────────────────────────────────────
+    function cancelPayment() {
+      if (pollTimer) clearInterval(pollTimer);
+      sessionStorage.removeItem('makao_checkout_id');
+      window.location.href = 'payment-method.html';
+    }
+
+    // ── Error toast ───────────────────────────────
+    function showError(msg) {
+      const existing = document.getElementById('errorToast');
+      if (existing) existing.remove();
+
+      const toast = document.createElement('div');
+      toast.id = 'errorToast';
+      Object.assign(toast.style, {
+        position: 'fixed',
+        bottom: '32px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: '#c0392b',
+        color: '#fff',
+        padding: '14px 24px',
+        borderRadius: '10px',
+        fontSize: '14px',
+        zIndex: '999',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+        maxWidth: '380px',
+        textAlign: 'center',
+        lineHeight: '1.5'
+      });
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000);
+    }
+
+  </script>
+</body>
+</html>
