@@ -66,7 +66,11 @@ from auth import get_current_host, require_agency
 from config import BOOSTERS, PRICING
 from models import (
     AnalyticsResponse,
+    AvailabilityConfirmationCreate,
+    AvailabilityConfirmationResponse,
     DashboardResponse,
+    FavoriteCreate,
+    FavoriteResponse,
     ListingCardResponse,
     ListingCreate,
     ListingFilters,
@@ -79,11 +83,17 @@ from models import (
     BoosterDetail,
     PasswordChangeRequest,
     PricingResponse,
+    PropertyUpdate,
+    SavedSearchCreate,
+    SavedSearchResponse,
     SignupRequest,
     TokenResponse,
+    UserPreferencesResponse,
+    UserPreferencesUpsert,
     UserResponse,
     UserUpdateRequest,
 )
+import preferences as preferences_logic
 
 # Feature routers — each module owns its own APIRouter
 from auth import router as auth_router
@@ -158,35 +168,15 @@ async def _booster_expiry_loop():
 
 async def _sync_featured_status_after_expiry():
     """
-    After boosters expire, check if any listings need is_featured reset.
-    A listing should only stay featured if it's an agency package OR has
-    an active homepage_feature booster.
+    DEPRECATED no-op. `listings.is_featured` / `listings.package_type` no
+    longer exist — Phase 0 moved paid placement to `sponsored_placements`,
+    which already has its own start/end date bounds and needs no expiry
+    sync here. Kept as a stub (rather than deleted) so the background loop
+    below doesn't need restructuring; a Phase 2 monetization pass should
+    remove this entirely once boosters/packages are redesigned around
+    sponsored_placements.
     """
-    try:
-        pool = await db.get_pool()
-        async with pool.acquire() as conn:
-            # Find all featured listings that have no active homepage_feature booster
-            # and are not agency packages (agency listings are always featured)
-            rows = await conn.fetch(
-                """
-                SELECT l.id
-                FROM   listings l
-                WHERE  l.is_featured = TRUE
-                  AND  l.package_type != 'agency'
-                  AND  NOT EXISTS (
-                      SELECT 1 FROM boosters b
-                      WHERE  b.listing_id = l.id
-                        AND  b.booster_type = 'homepage_feature'
-                        AND  b.is_active = TRUE
-                        AND  (b.end_date IS NULL OR b.end_date > NOW())
-                  )
-                """
-            )
-            for row in rows:
-                await listing_logic.unfeature_listing(row["id"])
-                logger.info(f"Unfeatured listing {row['id']} — homepage_feature booster expired.")
-    except Exception as exc:
-        logger.error(f"Featured status sync error: {exc}")
+    return
 
 
 # ===========================================================================
@@ -360,7 +350,8 @@ async def featured_listings(
 )
 async def browse_listings(
     county: Optional[str] = Query(None),
-    city: Optional[str] = Query(None),
+    neighbourhood: Optional[str] = Query(None),
+    property_type: Optional[str] = Query(None),
     min_price: Optional[float] = Query(None, ge=0),
     max_price: Optional[float] = Query(None, ge=0),
     bedrooms: Optional[int] = Query(None, ge=0),
@@ -369,9 +360,14 @@ async def browse_listings(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ) -> ListingsPageResponse:
+    """
+    Hard-filtered, organic results only — ordered by created_at DESC.
+    Sponsored placements are never mixed in here; see GET /listings/featured.
+    """
     filters = ListingFilters(
         county=county,
-        city=city,
+        neighbourhood=neighbourhood,
+        property_type=property_type,
         min_price=min_price,
         max_price=max_price,
         bedrooms=bedrooms,
@@ -399,17 +395,55 @@ async def get_listing(listing_id: int) -> ListingResponse:
     response_model=ListingResponse,
     status_code=status.HTTP_201_CREATED,
     tags=["Listings"],
-    summary="Create a new listing",
+    summary="Create a property + its first listing",
     description=(
-        "Creates a listing in inactive state. "
-        "It goes live only after payment is confirmed via the payments flow."
+        "Creates ONE property row (the physical asset) and ONE listing row "
+        "(the advertisement) referencing it, and goes live immediately — "
+        "organic visibility is never gated behind payment. Sponsored "
+        "placement, if purchased separately, is layered on top and labelled."
     ),
 )
 async def create_listing(
     body: ListingCreate,
     host: UserResponse = Depends(get_current_host),
 ) -> ListingResponse:
-    return await listing_logic.create_listing(host_id=host.id, data=body)
+    return await listing_logic.create_property_and_listing(host_id=host.id, data=body)
+
+
+@app.patch(
+    "/api/listings/{listing_id}/property",
+    response_model=ListingResponse,
+    tags=["Listings"],
+    summary="Update the physical property behind a listing",
+    description="Partial update to property fields (bedrooms, photos, location, etc). Host must own the listing.",
+)
+async def update_listing_property(
+    listing_id: int,
+    body: PropertyUpdate,
+    host: UserResponse = Depends(get_current_host),
+) -> ListingResponse:
+    return await listing_logic.update_property_for_listing(listing_id, host.id, body)
+
+
+@app.post(
+    "/api/listings/{listing_id}/availability",
+    response_model=AvailabilityConfirmationResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Listings"],
+    summary="Confirm listing availability",
+    description=(
+        "Appends a new availability confirmation (available / unavailable / "
+        "uncertain). This is the source of truth for freshness shown on the "
+        "frontend (e.g. 'Available — confirmed today') — there is no single "
+        "Boolean flag. Host must own the listing."
+    ),
+)
+async def confirm_listing_availability(
+    listing_id: int,
+    body: AvailabilityConfirmationCreate,
+    host: UserResponse = Depends(get_current_host),
+) -> AvailabilityConfirmationResponse:
+    return await listing_logic.confirm_availability(listing_id, host.id, body)
 
 
 @app.patch(

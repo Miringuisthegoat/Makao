@@ -150,7 +150,15 @@ class UserUpdateRequest(BaseModel):
 
 
 # ===========================================================================
-# ── LISTINGS ─────────────────────────────────────────────────────────────────
+# ── PROPERTIES & LISTINGS (Phase 0/1 shape) ─────────────────────────────────
+# ===========================================================================
+#
+# Architectural invariant: PROPERTY (the physical asset) is distinct from
+# LISTING (an advertisement for that property). A property can in principle
+# be referenced by more than one listing (e.g. re-advertised by a new agent)
+# even though Phase 1 still creates them 1:1 through a single combined form.
+# Organic ranking of listings must never depend on payment — there is no
+# visibility_rank / is_featured / package_type on listings by design.
 # ===========================================================================
 
 # All 47 counties in Kenya — used for validation
@@ -173,138 +181,270 @@ VALID_AMENITIES = {
     "solar_power", "fibre", "pet_friendly", "wheelchair_accessible",
 }
 
+# Residential property types supported at MVP (land/commercial excluded)
+PROPERTY_TYPES = {
+    "bedsitter", "studio", "1_bedroom", "2_bedroom", "3_bedroom",
+    "4plus_bedroom", "apartment", "house", "townhouse", "maisonette",
+}
+
+LISTING_TYPES = {"rent", "sale"}
+LISTING_STATUSES = {"active", "inactive", "rented", "removed"}
+AVAILABILITY_STATUSES = {"available", "unavailable", "uncertain"}
+
+
+def _validate_amenities(v: List[str]) -> List[str]:
+    invalid = [a for a in v if a.lower() not in VALID_AMENITIES]
+    if invalid:
+        raise ValueError(
+            f"Unknown amenities: {invalid}. Valid options: {sorted(VALID_AMENITIES)}"
+        )
+    return [a.lower() for a in v]
+
+
+def _validate_county(v: str) -> str:
+    normalised = v.strip().title()
+    if normalised not in KENYAN_COUNTIES:
+        raise ValueError(f"'{v}' is not a recognised Kenyan county.")
+    return normalised
+
+
+# ---------------------------------------------------------------------------
+# ── LOCATION ─────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+
+class LocationInput(BaseModel):
+    """
+    Structured location supplied when creating/updating a property.
+    A matching or new `locations` row is resolved server-side — the host
+    never supplies a location_id directly.
+    """
+    county: str = Field(..., min_length=2, max_length=100)
+    subcounty: Optional[str] = Field(None, max_length=100)
+    ward: Optional[str] = Field(None, max_length=100)
+    neighbourhood: Optional[str] = Field(None, max_length=120)
+    estate: Optional[str] = Field(None, max_length=120)
+    address: Optional[str] = Field(None, max_length=255)
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+
+    @field_validator("county")
+    @classmethod
+    def _county(cls, v: str) -> str:
+        return _validate_county(v)
+
+
+class LocationResponse(BaseModel):
+    id: int
+    county: str
+    subcounty: Optional[str] = None
+    ward: Optional[str] = None
+    neighbourhood: Optional[str] = None
+    estate: Optional[str] = None
+    address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+
+# ---------------------------------------------------------------------------
+# ── PROPERTIES ───────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+
+class PropertyCreate(BaseModel):
+    """
+    The physical-asset half of POST /listings.
+    Not exposed as its own top-level endpoint at Phase 1 — hosts still
+    create a property and its first listing together in one form — but
+    modelled and persisted as a distinct `properties` row from day one so
+    a property can later be referenced by more than one listing.
+    """
+    property_type: str = Field(..., pattern="^(" + "|".join(PROPERTY_TYPES) + ")$")
+    title: str = Field(..., min_length=5, max_length=200)
+    description: Optional[str] = Field(None, max_length=5000)
+    property_category: str = Field("residential", pattern="^(residential|commercial)$")
+    location: LocationInput
+    size_sqft: Optional[int] = Field(None, gt=0)
+    bedrooms: int = Field(..., ge=0, le=50)
+    bathrooms: int = Field(..., ge=1, le=20)
+    floor: Optional[str] = Field(None, max_length=20)
+    furnished: bool = False
+    parking_spaces: int = Field(0, ge=0, le=50)
+    amenities: List[str] = Field(default_factory=list)
+    photos: List[str] = Field(default_factory=list)
+
+    @field_validator("amenities")
+    @classmethod
+    def _amenities(cls, v: List[str]) -> List[str]:
+        return _validate_amenities(v)
+
+    @field_validator("photos")
+    @classmethod
+    def _photos(cls, v: List[str]) -> List[str]:
+        if len(v) > 50:
+            raise ValueError("Maximum 50 photos per property.")
+        return v
+
+    @field_validator("property_category")
+    @classmethod
+    def _residential_only_mvp(cls, v: str) -> str:
+        if v != "residential":
+            raise ValueError(
+                "Commercial properties are out of scope for MVP/V1. "
+                "Only 'residential' is accepted."
+            )
+        return v
+
+
+class PropertyUpdate(BaseModel):
+    """PATCH-style partial update to the physical asset."""
+    title: Optional[str] = Field(None, min_length=5, max_length=200)
+    description: Optional[str] = Field(None, max_length=5000)
+    location: Optional[LocationInput] = None
+    size_sqft: Optional[int] = Field(None, gt=0)
+    bedrooms: Optional[int] = Field(None, ge=0, le=50)
+    bathrooms: Optional[int] = Field(None, ge=1, le=20)
+    floor: Optional[str] = Field(None, max_length=20)
+    furnished: Optional[bool] = None
+    parking_spaces: Optional[int] = Field(None, ge=0, le=50)
+    amenities: Optional[List[str]] = None
+    photos: Optional[List[str]] = None
+
+    @field_validator("amenities")
+    @classmethod
+    def _amenities(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        return None if v is None else _validate_amenities(v)
+
+
+class PropertyResponse(BaseModel):
+    id: int
+    property_type: str
+    title: str
+    description: Optional[str] = None
+    property_category: str
+    location: Optional[LocationResponse] = None
+    size_sqft: Optional[int] = None
+    bedrooms: int
+    bathrooms: int
+    floor: Optional[str] = None
+    furnished: bool
+    parking_spaces: int
+    amenities: List[str] = []
+    photos: List[str] = []
+    created_at: datetime
+    updated_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# ── AVAILABILITY CONFIRMATIONS ───────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+
+class AvailabilityConfirmationCreate(BaseModel):
+    """
+    POST /listings/{id}/availability  (protected — host, or admin override)
+    A Boolean is_available is deliberately NOT the source of truth — every
+    confirmation is appended so the UI can show real freshness
+    ("Available — confirmed today") rather than a single stale flag.
+    """
+    status: str = Field(..., pattern="^(available|unavailable|uncertain)$")
+    confirmation_method: str = Field(
+        "host_manual",
+        pattern="^(host_manual|admin_override|system_expiry|renter_report)$",
+    )
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class AvailabilityConfirmationResponse(BaseModel):
+    id: int
+    listing_id: int
+    confirmed_by: Optional[int] = None
+    confirmation_method: str
+    status: str
+    confirmed_at: datetime
+    notes: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# ── LISTINGS ─────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 class ListingCreate(BaseModel):
     """
     POST /listings  (protected)
-    Sent from add-listing.html after host has filled the form.
-    Listing is created inactive; activates only after payment confirmed.
+    Creates ONE property row and ONE listing row that references it, in a
+    single request — the simplest host-facing shape for Phase 1. Multiple
+    listings sharing a property (e.g. building consolidation) is a V1
+    concern (see buildings / deduplication).
     """
-    title: str = Field(..., min_length=5, max_length=200)
-    description: Optional[str] = Field(None, max_length=5000)
-    location: Optional[str] = Field(None, max_length=255)   # estate / street
-    city: str = Field(..., min_length=2, max_length=100)
-    county: str = Field(..., min_length=2, max_length=100)
-    price_per_month: float = Field(..., gt=0)
-    bedrooms: int = Field(..., ge=0, le=50)   # 0 = bedsitter / studio
-    bathrooms: int = Field(..., ge=1, le=20)
-    size_sqft: Optional[int] = Field(None, gt=0)
-    amenities: List[str] = Field(default_factory=list)
-    photos: List[str] = Field(default_factory=list)          # URLs after upload
-    package_type: str = Field(..., pattern="^(landlord|agency)$")
-
-    @field_validator("county")
-    @classmethod
-    def validate_county(cls, v: str) -> str:
-        # Title-case the input so "nairobi" → "Nairobi"
-        normalised = v.strip().title()
-        if normalised not in KENYAN_COUNTIES:
-            raise ValueError(f"'{v}' is not a recognised Kenyan county.")
-        return normalised
-
-    @field_validator("amenities")
-    @classmethod
-    def validate_amenities(cls, v: List[str]) -> List[str]:
-        invalid = [a for a in v if a.lower() not in VALID_AMENITIES]
-        if invalid:
-            raise ValueError(f"Unknown amenities: {invalid}. "
-                             f"Valid options: {sorted(VALID_AMENITIES)}")
-        return [a.lower() for a in v]
-
-    @field_validator("photos")
-    @classmethod
-    def validate_photos(cls, v: List[str]) -> List[str]:
-        if len(v) > 50:
-            raise ValueError("Maximum 50 photos per listing.")
-        return v
+    property: PropertyCreate
+    listing_type: str = Field("rent", pattern="^(rent|sale)$")
+    asking_price: float = Field(..., gt=0)
+    service_charge: float = Field(0, ge=0)
+    deposit: float = Field(0, ge=0)
+    currency: str = Field("KES", max_length=5)
+    available_from: Optional[datetime] = None
 
 
 class ListingUpdate(BaseModel):
     """
     PATCH /listings/{id}  (protected — host only)
-    All fields optional; only supplied fields are written to DB.
+    Listing-level fields only. Use PATCH /properties/{id} for physical
+    attributes of the underlying property.
     """
-    title: Optional[str] = Field(None, min_length=5, max_length=200)
-    description: Optional[str] = Field(None, max_length=5000)
-    location: Optional[str] = Field(None, max_length=255)
-    city: Optional[str] = Field(None, min_length=2, max_length=100)
-    county: Optional[str] = Field(None, min_length=2, max_length=100)
-    price_per_month: Optional[float] = Field(None, gt=0)
-    bedrooms: Optional[int] = Field(None, ge=0, le=50)
-    bathrooms: Optional[int] = Field(None, ge=1, le=20)
-    size_sqft: Optional[int] = Field(None, gt=0)
-    amenities: Optional[List[str]] = None
-    photos: Optional[List[str]] = None
-    is_available: Optional[bool] = None
-
-    @field_validator("county")
-    @classmethod
-    def validate_county(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return v
-        normalised = v.strip().title()
-        if normalised not in KENYAN_COUNTIES:
-            raise ValueError(f"'{v}' is not a recognised Kenyan county.")
-        return normalised
-
-    @field_validator("amenities")
-    @classmethod
-    def validate_amenities(cls, v: Optional[List[str]]) -> Optional[List[str]]:
-        if v is None:
-            return v
-        invalid = [a for a in v if a.lower() not in VALID_AMENITIES]
-        if invalid:
-            raise ValueError(f"Unknown amenities: {invalid}.")
-        return [a.lower() for a in v]
+    asking_price: Optional[float] = Field(None, gt=0)
+    service_charge: Optional[float] = Field(None, ge=0)
+    deposit: Optional[float] = Field(None, ge=0)
+    currency: Optional[str] = Field(None, max_length=5)
+    status: Optional[str] = Field(None, pattern="^(active|inactive|rented|removed)$")
+    available_from: Optional[datetime] = None
 
 
 class ListingResponse(BaseModel):
     """
-    Full listing shape returned to the client.
-    Used on: single listing page, dashboard, AI matcher results.
+    Full listing shape returned to the client — the advertisement plus its
+    referenced property, never re-flattened back into one legacy row.
+    No visibility_rank / is_featured / package_type: organic placement is
+    never influenced by payment. Sponsored placement, when present, is
+    surfaced separately and must be labelled in the UI.
     """
     id: int
     host_id: int
-    title: str
-    description: Optional[str] = None
-    location: Optional[str] = None
-    city: str
-    county: str
-    price_per_month: float
-    bedrooms: int
-    bathrooms: int
-    size_sqft: Optional[int] = None
-    amenities: List[str] = []
-    photos: List[str] = []
-    is_available: bool
-    is_featured: bool
-    package_type: str
-    visibility_rank: int
+    property: PropertyResponse
+    listing_type: str
+    asking_price: float
+    service_charge: float
+    deposit: float
+    currency: str
+    status: str
+    available_from: Optional[datetime] = None
+    last_confirmed_at: Optional[datetime] = None
+    latest_availability: Optional[AvailabilityConfirmationResponse] = None
+    expires_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-    # Joined from users table
     host_name: Optional[str] = None
     host_account_type: Optional[str] = None
-    host_photo: Optional[str] = None
+    host_verification_status: Optional[str] = None
+    is_sponsored: bool = False   # labelled, isolated from organic rank
 
 
 class ListingCardResponse(BaseModel):
-    """
-    Lightweight listing shape for listing cards (browse page, homepage).
-    Omits description and full amenities list to reduce payload.
-    """
+    """Lightweight listing shape for cards (browse page, homepage, saved list)."""
     id: int
+    property_id: int
     title: str
-    city: str
+    property_type: str
     county: str
-    price_per_month: float
+    neighbourhood: Optional[str] = None
     bedrooms: int
     bathrooms: int
+    asking_price: float
+    currency: str
     photos: List[str] = []
-    is_featured: bool
-    package_type: str
+    status: str
+    availability_status: Optional[str] = None
+    last_confirmed_at: Optional[datetime] = None
     host_name: Optional[str] = None
     host_account_type: Optional[str] = None
+    is_sponsored: bool = False
 
 
 class ListingsPageResponse(BaseModel):
@@ -319,10 +459,11 @@ class ListingsPageResponse(BaseModel):
 class ListingFilters(BaseModel):
     """
     Query params for GET /listings
-    All optional — absence means no filter applied.
+    Hard filters only — no field here influences ranking by payment status.
     """
     county: Optional[str] = None
-    city: Optional[str] = None
+    neighbourhood: Optional[str] = None
+    property_type: Optional[str] = None
     min_price: Optional[float] = Field(None, ge=0)
     max_price: Optional[float] = Field(None, ge=0)
     bedrooms: Optional[int] = Field(None, ge=0)
@@ -340,6 +481,119 @@ class ListingFilters(BaseModel):
         ):
             raise ValueError("min_price cannot exceed max_price.")
         return self
+
+
+# ===========================================================================
+# ── USER PREFERENCES (renter) ───────────────────────────────────────────────
+# ===========================================================================
+#
+# One row per renter. Upserted after every search or chat interaction.
+# Feeds the Phase 2 search service and Phase 3 deterministic scoring engine.
+# The Phase 5 LLM preference extractor writes to this same shape — it never
+# ranks properties itself.
+# ===========================================================================
+
+class UserPreferencesUpsert(BaseModel):
+    """PUT /preferences  (protected — renter)"""
+    workplace_latitude: Optional[float] = Field(None, ge=-90, le=90)
+    workplace_longitude: Optional[float] = Field(None, ge=-180, le=180)
+    workplace_name: Optional[str] = Field(None, max_length=150)
+    income_range: Optional[str] = Field(None, max_length=30)
+    rent_budget: Optional[float] = Field(None, gt=0)
+    total_housing_budget: Optional[float] = Field(None, gt=0)
+    bedrooms: Optional[int] = Field(None, ge=0, le=50)
+    preferred_property_type: Optional[str] = Field(
+        None, pattern="^(" + "|".join(PROPERTY_TYPES) + ")$"
+    )
+    transport_mode: Optional[str] = Field(
+        None, pattern="^(walking|matatu|bus|boda|car|mixed)$"
+    )
+    commute_limit_minutes: Optional[int] = Field(None, gt=0, le=180)
+    safety_importance: Optional[int] = Field(None, ge=1, le=5)
+    water_importance: Optional[int] = Field(None, ge=1, le=5)
+    internet_importance: Optional[int] = Field(None, ge=1, le=5)
+    parking_required: bool = False
+    quietness_preference: Optional[int] = Field(None, ge=1, le=5)
+    furnished_preference: Optional[str] = Field(
+        None, pattern="^(furnished|unfurnished|no_preference)$"
+    )
+    preferred_neighbourhoods: List[str] = Field(default_factory=list)
+    household_size: Optional[int] = Field(None, ge=1, le=30)
+    pets: bool = False
+    other_preferences: Optional[str] = Field(None, max_length=1000)
+
+    @model_validator(mode="after")
+    def budget_sanity(self) -> "UserPreferencesUpsert":
+        if (
+            self.rent_budget is not None
+            and self.total_housing_budget is not None
+            and self.rent_budget > self.total_housing_budget
+        ):
+            raise ValueError(
+                "rent_budget cannot exceed total_housing_budget."
+            )
+        return self
+
+
+class UserPreferencesResponse(BaseModel):
+    user_id: int
+    workplace_latitude: Optional[float] = None
+    workplace_longitude: Optional[float] = None
+    workplace_name: Optional[str] = None
+    income_range: Optional[str] = None
+    rent_budget: Optional[float] = None
+    total_housing_budget: Optional[float] = None
+    bedrooms: Optional[int] = None
+    preferred_property_type: Optional[str] = None
+    transport_mode: Optional[str] = None
+    commute_limit_minutes: Optional[int] = None
+    safety_importance: Optional[int] = None
+    water_importance: Optional[int] = None
+    internet_importance: Optional[int] = None
+    parking_required: bool
+    quietness_preference: Optional[int] = None
+    furnished_preference: Optional[str] = None
+    preferred_neighbourhoods: List[str] = []
+    household_size: Optional[int] = None
+    pets: bool
+    other_preferences: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+# ===========================================================================
+# ── SAVED SEARCHES (P1 stretch) ─────────────────────────────────────────────
+# ===========================================================================
+
+class SavedSearchCreate(BaseModel):
+    """POST /saved-searches  (protected — renter)"""
+    search_criteria: ListingFilters
+    search_type: str = Field("residential", pattern="^(residential|commercial)$")
+
+
+class SavedSearchResponse(BaseModel):
+    id: int
+    user_id: int
+    search_criteria: Dict[str, Any]
+    search_type: str
+    created_at: datetime
+    last_run_at: Optional[datetime] = None
+
+
+# ===========================================================================
+# ── FAVORITES (P1 stretch) ──────────────────────────────────────────────────
+# ===========================================================================
+
+class FavoriteCreate(BaseModel):
+    """POST /favorites  (protected — renter). Keyed on property_id."""
+    property_id: int
+
+
+class FavoriteResponse(BaseModel):
+    id: int
+    user_id: int
+    property_id: int
+    created_at: datetime
 
 
 # ===========================================================================

@@ -1,32 +1,35 @@
 """
 listings.py — Makao Rental Platform
 =====================================
-All business logic for property listings:
-  - Create a new listing (inactive until payment confirmed)
-  - Read listings (single, paginated browse, host-owned)
-  - Update listing fields
-  - Delete / deactivate a listing
-  - Activate a listing after payment confirmation
-  - Photo limit enforcement per package type
-  - Visibility ranking helpers used by the AI matcher
+Business logic for PROPERTIES and LISTINGS.
 
-This module only contains business logic.
-All raw SQL / DB calls go through database.py.
+Architectural invariant (Phase 0/1):
+  PROPERTY = the physical real-world asset.
+  LISTING  = an advertisement for that property, created by a host.
+A property and its first listing are created together via one host-facing
+form (create_property_and_listing), but are always persisted as two
+separate rows from day one, so a property can later be referenced by more
+than one listing (agency re-advertising, building consolidation in V1).
+
+Organic ranking here is always created_at DESC. There is no
+visibility_rank / is_featured / package_type column anywhere in this
+module — sponsored placement is a fully separate, labelled concept
+(see database.get_featured_listings / sponsored_placements).
+
+This module only contains business logic. All raw SQL lives in database.py.
 All request/response shapes come from models.py.
-All pricing / package limits come from config.py.
 
 Exposed functions (called from main.py route handlers):
-  create_listing(host_id, data)             → ListingResponse
-  get_listing(listing_id)                   → ListingResponse | None
-  get_listings(filters)                     → ListingsPageResponse
-  get_host_listings(host_id)                → List[ListingResponse]
-  update_listing(listing_id, host_id, data) → ListingResponse
-  delete_listing(listing_id, host_id)       → OKResponse
-  activate_listing(listing_id)              → OKResponse
-  deactivate_listing(listing_id, host_id)   → OKResponse
-  bump_listing(listing_id)                  → OKResponse
-  get_featured_listings(limit)              → List[ListingCardResponse]
-  get_listings_for_matcher(filters)         → List[dict]
+  create_property_and_listing(host_id, data)      -> ListingResponse
+  get_listing(listing_id)                         -> ListingResponse
+  get_listings(filters)                           -> ListingsPageResponse
+  get_host_listings(host_id)                      -> List[ListingResponse]
+  update_listing(listing_id, host_id, data)       -> ListingResponse
+  update_property_for_listing(listing_id, host_id, data) -> ListingResponse
+  delete_listing(listing_id, host_id)             -> OKResponse
+  confirm_availability(listing_id, host_id, data) -> AvailabilityConfirmationResponse
+  get_featured_listings(limit)                    -> List[ListingCardResponse]  (sponsored, labelled)
+  get_listings_for_matcher(...)                   -> List[dict]
 """
 
 from __future__ import annotations
@@ -37,216 +40,221 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 
 import database as db
-from config import PRICING
 from models import (
+    AvailabilityConfirmationCreate,
+    AvailabilityConfirmationResponse,
     ListingCardResponse,
     ListingCreate,
     ListingFilters,
     ListingResponse,
     ListingsPageResponse,
     ListingUpdate,
+    LocationResponse,
     OKResponse,
+    PropertyResponse,
+    PropertyUpdate,
 )
 
 
 # ---------------------------------------------------------------------------
-# ── CONSTANTS ───────────────────────────────────────────────────────────────
+# HELPERS
 # ---------------------------------------------------------------------------
 
-# Visibility rank assigned to new listings by package type.
-# Higher number = surfaced first in browse and AI matcher results.
-# Agency and boosted listings will be ranked higher by the payment / booster
-# logic in payments.py; these are the baseline starting ranks.
-_BASE_RANK: dict[str, int] = {
-    "agency": 20,
-    "landlord": 10,
-}
-
-# Maximum photos allowed per package type.
-# -1 in PRICING config means unlimited; we cap at a safe server limit.
-_MAX_PHOTOS_HARD_LIMIT = 50
-
-
-# ---------------------------------------------------------------------------
-# ── HELPERS ─────────────────────────────────────────────────────────────────
-# ---------------------------------------------------------------------------
-
-def _photo_limit_for_package(package_type: str) -> int:
-    """
-    Return the maximum number of photos allowed for a package.
-    Reads from config.py; -1 = unlimited (capped by hard limit).
-    """
-    limit = PRICING.get(package_type, {}).get("photos", 10)
-    if limit == -1:
-        return _MAX_PHOTOS_HARD_LIMIT
-    return limit
-
-
-def _enforce_photo_limit(photos: List[str], package_type: str) -> None:
-    """
-    Raise 400 if the supplied photo list exceeds the package allowance.
-    Called on both create and update.
-    """
-    limit = _photo_limit_for_package(package_type)
-    if len(photos) > limit:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                f"The {package_type} package allows a maximum of {limit} photos. "
-                f"You supplied {len(photos)}."
-            ),
-        )
-
-
-def _assert_listing_owner(listing: dict, host_id: int) -> None:
-    """
-    Raise 403 if the listing does not belong to host_id.
-    listing is the raw dict row returned by database.py.
-    """
-    if listing["host_id"] != host_id:
+def _assert_listing_owner(row: dict, host_id: int) -> None:
+    if row["host_id"] != host_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to modify this listing.",
         )
 
 
-def _row_to_listing_response(row: dict) -> ListingResponse:
-    """Convert a raw DB row dict → ListingResponse Pydantic model."""
+def _row_to_location_response(row: dict) -> Optional[LocationResponse]:
+    if not row.get("loc_id"):
+        return None
+    return LocationResponse(
+        id=row["loc_id"],
+        county=row["loc_county"],
+        subcounty=row.get("loc_subcounty"),
+        ward=row.get("loc_ward"),
+        neighbourhood=row.get("loc_neighbourhood"),
+        estate=row.get("loc_estate"),
+        address=row.get("loc_address"),
+        latitude=row.get("loc_latitude"),
+        longitude=row.get("loc_longitude"),
+    )
+
+
+def _row_to_property_response(row: dict) -> PropertyResponse:
+    """Build a PropertyResponse from a joined listing row OR a plain property row."""
+    return PropertyResponse(
+        id=row.get("property_id", row.get("id")),
+        property_type=row["property_type"],
+        title=row["title"],
+        description=row.get("description"),
+        property_category=row["property_category"],
+        location=_row_to_location_response(row),
+        size_sqft=row.get("size_sqft"),
+        bedrooms=row["bedrooms"],
+        bathrooms=row["bathrooms"],
+        floor=row.get("floor"),
+        furnished=bool(row["furnished"]),
+        parking_spaces=row["parking_spaces"],
+        amenities=row.get("amenities") or [],
+        photos=row.get("photos") or [],
+        created_at=row.get("property_created_at", row.get("created_at")),
+        updated_at=row.get("property_updated_at", row.get("updated_at")),
+    )
+
+
+def _row_to_availability_response(row: Optional[dict]) -> Optional[AvailabilityConfirmationResponse]:
+    if not row:
+        return None
+    return AvailabilityConfirmationResponse(
+        id=row["id"],
+        listing_id=row["listing_id"],
+        confirmed_by=row.get("confirmed_by"),
+        confirmation_method=row["confirmation_method"],
+        status=row["status"],
+        confirmed_at=row["confirmed_at"],
+        notes=row.get("notes"),
+    )
+
+
+def _row_to_listing_response(row: dict, latest_availability: Optional[dict] = None) -> ListingResponse:
     return ListingResponse(
         id=row["id"],
         host_id=row["host_id"],
-        title=row["title"],
-        description=row.get("description"),
-        location=row.get("location"),
-        city=row["city"],
-        county=row["county"],
-        price_per_month=float(row["price_per_month"]),
-        bedrooms=row["bedrooms"],
-        bathrooms=row["bathrooms"],
-        size_sqft=row.get("size_sqft"),
-        amenities=row.get("amenities") or [],
-        photos=row.get("photos") or [],
-        is_available=bool(row["is_available"]),
-        is_featured=bool(row["is_featured"]),
-        package_type=row["package_type"],
-        visibility_rank=row["visibility_rank"],
+        property=_row_to_property_response(row),
+        listing_type=row["listing_type"],
+        asking_price=float(row["asking_price"]),
+        service_charge=float(row["service_charge"]),
+        deposit=float(row["deposit"]),
+        currency=row["currency"],
+        status=row["status"],
+        available_from=row.get("available_from"),
+        last_confirmed_at=row.get("last_confirmed_at"),
+        latest_availability=_row_to_availability_response(latest_availability),
+        expires_at=row.get("expires_at"),
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         host_name=row.get("host_name"),
         host_account_type=row.get("host_account_type"),
-        host_photo=row.get("host_photo"),
+        host_verification_status=row.get("host_verification_status"),
+        is_sponsored=bool(row.get("is_sponsored", False)),
     )
 
 
 def _row_to_card_response(row: dict) -> ListingCardResponse:
-    """Convert a raw DB row dict → lightweight ListingCardResponse."""
     return ListingCardResponse(
         id=row["id"],
+        property_id=row["property_id"],
         title=row["title"],
-        city=row["city"],
-        county=row["county"],
-        price_per_month=float(row["price_per_month"]),
+        property_type=row["property_type"],
+        county=row.get("loc_county") or "",
+        neighbourhood=row.get("loc_neighbourhood"),
         bedrooms=row["bedrooms"],
         bathrooms=row["bathrooms"],
+        asking_price=float(row["asking_price"]),
+        currency=row["currency"],
         photos=row.get("photos") or [],
-        is_featured=bool(row["is_featured"]),
-        package_type=row["package_type"],
+        status=row["status"],
+        last_confirmed_at=row.get("last_confirmed_at"),
         host_name=row.get("host_name"),
         host_account_type=row.get("host_account_type"),
+        is_sponsored=bool(row.get("is_sponsored", False)),
     )
 
 
 # ---------------------------------------------------------------------------
-# ── CREATE ──────────────────────────────────────────────────────────────────
+# CREATE
 # ---------------------------------------------------------------------------
 
-async def create_listing(host_id: int, data: ListingCreate) -> ListingResponse:
+async def create_property_and_listing(host_id: int, data: ListingCreate) -> ListingResponse:
     """
-    Create a new listing for a host.
-
-    The listing is created with is_available=False (inactive).
-    It will only go live after payment is confirmed by payments.py
-    calling activate_listing().
-
-    Enforces:
-      - Photo count limit for the chosen package (from config.py)
-      - Package listing quota: the host must not exceed allowed listings
-        for their current unpaid / paid count (enforced in DB layer)
+    Create ONE property row and ONE listing row referencing it.
+    This is the only write path for new inventory at Phase 1 — a host who
+    wants a second advertisement for the same physical home is a V1
+    (building/dedup) concern, not handled here.
     """
-    # 1. Validate photo count against the package config
-    _enforce_photo_limit(data.photos, data.package_type)
+    prop = data.property
+    location_id = await db.resolve_or_create_location(prop.location.model_dump())
 
-    # 2. Determine starting visibility rank from package type
-    visibility_rank = _BASE_RANK.get(data.package_type, 10)
-
-    # 3. Set featured flag based on package (agency listings start featured)
-    is_featured = PRICING.get(data.package_type, {}).get("featured", False)
-
-    # 4. Write to DB (inactive — payment not yet confirmed)
-    listing_id = await db.create_listing(
-        host_id=host_id,
-        title=data.title,
-        description=data.description,
-        location=data.location,
-        city=data.city,
-        county=data.county,
-        price_per_month=data.price_per_month,
-        bedrooms=data.bedrooms,
-        bathrooms=data.bathrooms,
-        size_sqft=data.size_sqft,
-        amenities=data.amenities,
-        photos=data.photos,
-        package_type=data.package_type,
-        is_available=False,       # inactive until payment confirmed
-        is_featured=is_featured,
-        visibility_rank=visibility_rank,
+    property_id = await db.create_property(
+        {
+            "property_type": prop.property_type,
+            "title": prop.title,
+            "description": prop.description,
+            "property_category": prop.property_category,
+            "address": prop.location.address,
+            "location_id": location_id,
+            "size_sqft": prop.size_sqft,
+            "bedrooms": prop.bedrooms,
+            "bathrooms": prop.bathrooms,
+            "floor": prop.floor,
+            "furnished": prop.furnished,
+            "parking_spaces": prop.parking_spaces,
+            "photos": prop.photos,
+            "amenities": prop.amenities,
+        }
     )
 
-    # 5. Fetch and return the created listing
-    row = await db.get_listing_by_id(listing_id)
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Listing was created but could not be retrieved.",
-        )
-    return _row_to_listing_response(row)
+    listing_id = await db.create_listing_row(
+        {
+            "property_id": property_id,
+            "host_id": host_id,
+            "listing_type": data.listing_type,
+            "asking_price": data.asking_price,
+            "service_charge": data.service_charge,
+            "deposit": data.deposit,
+            "currency": data.currency,
+            "status": "active",
+            "available_from": data.available_from,
+        }
+    )
+
+    # Every new listing starts with one confirmation so freshness has a
+    # real starting point ("Available - confirmed today") rather than NULL.
+    await db.create_availability_confirmation(
+        listing_id=listing_id,
+        confirmed_by=host_id,
+        status_value="available",
+        confirmation_method="host_manual",
+        notes="Initial confirmation at listing creation.",
+    )
+
+    return await get_listing(listing_id)
 
 
 # ---------------------------------------------------------------------------
-# ── READ — SINGLE ────────────────────────────────────────────────────────────
+# READ - SINGLE
 # ---------------------------------------------------------------------------
 
 async def get_listing(listing_id: int) -> ListingResponse:
-    """
-    Return full details for a single listing.
-    Raises 404 if not found.
-    """
     row = await db.get_listing_by_id(listing_id)
     if not row:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Listing {listing_id} not found.",
         )
-    return _row_to_listing_response(row)
+    latest_availability = await db.get_latest_availability(listing_id)
+    return _row_to_listing_response(row, latest_availability)
 
 
 # ---------------------------------------------------------------------------
-# ── READ — PAGINATED BROWSE ──────────────────────────────────────────────────
+# READ - PAGINATED BROWSE
 # ---------------------------------------------------------------------------
 
 async def get_listings(filters: ListingFilters) -> ListingsPageResponse:
     """
-    Return a paginated, filtered list of ACTIVE listings for the browse page.
-
-    Ordering:
-      1. visibility_rank DESC (featured / boosted listings first)
-      2. created_at DESC (newest within same rank tier)
-
-    Only is_available=True listings are returned to public visitors.
+    Hard-filtered, paginated browse results — organic ordering only
+    (created_at DESC). Sponsored placements are never mixed in here; the
+    frontend requests them separately via GET /listings/featured and must
+    label them "Sponsored".
     """
     rows, total = await db.get_listings_paginated(
         county=filters.county,
-        city=filters.city,
+        neighbourhood=filters.neighbourhood,
+        property_type=filters.property_type,
         min_price=filters.min_price,
         max_price=filters.max_price,
         bedrooms=filters.bedrooms,
@@ -254,7 +262,7 @@ async def get_listings(filters: ListingFilters) -> ListingsPageResponse:
         amenities=filters.amenities,
         page=filters.page,
         page_size=filters.page_size,
-        only_available=True,
+        only_active=True,
     )
 
     pages = math.ceil(total / filters.page_size) if total > 0 else 1
@@ -269,245 +277,179 @@ async def get_listings(filters: ListingFilters) -> ListingsPageResponse:
 
 
 # ---------------------------------------------------------------------------
-# ── READ — HOST DASHBOARD ────────────────────────────────────────────────────
+# READ - HOST DASHBOARD
 # ---------------------------------------------------------------------------
 
 async def get_host_listings(host_id: int) -> List[ListingResponse]:
-    """
-    Return ALL listings (active and inactive) belonging to a host.
-    Used on the host dashboard and add-listing flow.
-    """
     rows = await db.get_listings_by_host(host_id)
     return [_row_to_listing_response(r) for r in rows]
 
 
 # ---------------------------------------------------------------------------
-# ── READ — HOMEPAGE FEATURED ─────────────────────────────────────────────────
+# READ - SPONSORED / HOMEPAGE (fully isolated, must be labelled)
 # ---------------------------------------------------------------------------
 
 async def get_featured_listings(limit: int = 8) -> List[ListingCardResponse]:
     """
-    Return the top N featured, available listings for the homepage.
-    Agency-package and homepage-booster listings appear here.
-    Ordered by visibility_rank DESC then created_at DESC.
+    Return active sponsored placements only. The frontend MUST render a
+    visible "Sponsored" label — these are never organic recommendations
+    and never influence GET /listings ordering.
     """
     rows = await db.get_featured_listings(limit=limit)
     return [_row_to_card_response(r) for r in rows]
 
 
 # ---------------------------------------------------------------------------
-# ── READ — AI MATCHER FEED ───────────────────────────────────────────────────
+# READ - AI CANDIDATE FEED
 # ---------------------------------------------------------------------------
 
 async def get_listings_for_matcher(
     county: Optional[str] = None,
-    city: Optional[str] = None,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
+    neighbourhood: Optional[str] = None,
+    max_budget: Optional[float] = None,
     bedrooms: Optional[int] = None,
-    amenities: Optional[List[str]] = None,
     limit: int = 50,
 ) -> List[dict]:
     """
-    Return a broad set of active listings as plain dicts for the AI matcher.
-    matcher.py (GPT-4o) will further rank and explain these to the visitor.
-
-    Agency and booster-prioritised listings come first (visibility_rank DESC).
-    Limit is kept generous so GPT-4o has enough candidates to work with.
+    Broad, hard-filtered candidate set for the AI layer. No ranking signal
+    here is payment-derived. matcher.py's direct LLM ranking is a known
+    architecture violation scheduled for replacement by the Phase 3
+    deterministic scoring engine — this function stays a plain data feed.
     """
-    rows = await db.get_listings_for_matcher(
-        county=county,
-        city=city,
-        min_price=min_price,
-        max_price=max_price,
-        bedrooms=bedrooms,
-        amenities=amenities,
-        limit=limit,
+    return await db.search_listings_for_ai(
+        {
+            "county": county,
+            "neighbourhood": neighbourhood,
+            "max_budget": max_budget,
+            "bedrooms": bedrooms,
+        }
     )
-    return rows  # raw dicts — matcher.py serialises them as needed
 
 
 # ---------------------------------------------------------------------------
-# ── UPDATE ──────────────────────────────────────────────────────────────────
+# UPDATE - LISTING FIELDS
 # ---------------------------------------------------------------------------
 
-async def update_listing(
-    listing_id: int,
-    host_id: int,
-    data: ListingUpdate,
-) -> ListingResponse:
-    """
-    Partially update a listing.
-    Only the host who owns the listing may update it.
-    Photo count is re-validated if photos are supplied.
-    """
-    # 1. Fetch existing row
+async def update_listing(listing_id: int, host_id: int, data: ListingUpdate) -> ListingResponse:
     row = await db.get_listing_by_id(listing_id)
     if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Listing {listing_id} not found.",
-        )
-
-    # 2. Ownership check
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Listing {listing_id} not found.")
     _assert_listing_owner(row, host_id)
 
-    # 3. Validate new photos against the existing package type
-    if data.photos is not None:
-        _enforce_photo_limit(data.photos, row["package_type"])
-
-    # 4. Build update payload — only non-None fields
     updates = data.model_dump(exclude_none=True)
-    if not updates:
-        # Nothing to update — return the current listing unchanged
-        return _row_to_listing_response(row)
+    if updates:
+        await db.update_listing_row(listing_id, updates)
 
-    # 5. Persist to DB
-    await db.update_listing(listing_id, updates)
-
-    # 6. Return updated listing
-    updated_row = await db.get_listing_by_id(listing_id)
-    return _row_to_listing_response(updated_row)
+    return await get_listing(listing_id)
 
 
 # ---------------------------------------------------------------------------
-# ── DELETE ──────────────────────────────────────────────────────────────────
+# UPDATE - PROPERTY FIELDS (via a listing the host owns)
+# ---------------------------------------------------------------------------
+
+async def update_property_for_listing(listing_id: int, host_id: int, data: PropertyUpdate) -> ListingResponse:
+    row = await db.get_listing_by_id(listing_id)
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Listing {listing_id} not found.")
+    _assert_listing_owner(row, host_id)
+
+    updates = data.model_dump(exclude={"location"}, exclude_none=True)
+    if data.location is not None:
+        updates["location_id"] = await db.resolve_or_create_location(data.location.model_dump())
+        if data.location.address:
+            updates["address"] = data.location.address
+
+    if updates:
+        await db.update_property(row["property_id"], updates)
+
+    return await get_listing(listing_id)
+
+
+# ---------------------------------------------------------------------------
+# DELETE
 # ---------------------------------------------------------------------------
 
 async def delete_listing(listing_id: int, host_id: int) -> OKResponse:
-    """
-    Permanently delete a listing.
-    Only the listing's host may delete it.
-    Active boosters on this listing are also cleaned up by the DB layer.
-    """
     row = await db.get_listing_by_id(listing_id)
     if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Listing {listing_id} not found.",
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Listing {listing_id} not found.")
     _assert_listing_owner(row, host_id)
-    await db.delete_listing(listing_id)
+    await db.delete_listing_row(listing_id)
     return OKResponse(message=f"Listing {listing_id} deleted successfully.")
 
 
 # ---------------------------------------------------------------------------
-# ── ACTIVATE / DEACTIVATE ────────────────────────────────────────────────────
+# AVAILABILITY FRESHNESS
 # ---------------------------------------------------------------------------
 
-async def activate_listing(listing_id: int) -> OKResponse:
+async def confirm_availability(
+    listing_id: int, actor_id: int, data: AvailabilityConfirmationCreate, is_admin: bool = False
+) -> AvailabilityConfirmationResponse:
     """
-    Mark a listing as active (is_available=True).
-    Called by payments.py after payment confirmation — not directly by host.
-    Also boosts visibility_rank to signal freshness.
+    Append a new availability confirmation. Only the listing's host (or an
+    admin, via confirmation_method='admin_override') may confirm. This is
+    the single source of truth for freshness — never a Boolean flag.
     """
     row = await db.get_listing_by_id(listing_id)
     if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Listing {listing_id} not found.",
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Listing {listing_id} not found.")
+    if not is_admin:
+        _assert_listing_owner(row, actor_id)
 
-    # Bump visibility rank on activation to surface it in results
-    new_rank = _BASE_RANK.get(row["package_type"], 10) + 5
-
-    await db.update_listing(
-        listing_id,
-        {
-            "is_available": True,
-            "visibility_rank": new_rank,
-        },
+    result = await db.create_availability_confirmation(
+        listing_id=listing_id,
+        confirmed_by=actor_id,
+        status_value=data.status,
+        confirmation_method=data.confirmation_method,
+        notes=data.notes,
     )
-    return OKResponse(message=f"Listing {listing_id} is now live.")
+    return _row_to_availability_response(result)
 
 
 async def deactivate_listing(listing_id: int, host_id: int) -> OKResponse:
-    """
-    Pause a listing (is_available=False) without deleting it.
-    Host can re-activate from the dashboard.
-    """
+    """Pause a listing (status='inactive') without deleting it."""
     row = await db.get_listing_by_id(listing_id)
     if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Listing {listing_id} not found.",
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Listing {listing_id} not found.")
     _assert_listing_owner(row, host_id)
-    await db.update_listing(listing_id, {"is_available": False})
+    await db.update_listing_row(listing_id, {"status": "inactive"})
     return OKResponse(message=f"Listing {listing_id} has been paused.")
 
 
 # ---------------------------------------------------------------------------
-# ── BUMP (Refresh Listing booster) ──────────────────────────────────────────
+# DEPRECATED COMPATIBILITY SHIMS
+# ---------------------------------------------------------------------------
+# These four functions predate the Phase 0 property/listing split and the
+# payment-isolation invariant (no visibility_rank / is_featured / package
+# activation on `listings`). payments.py's booster/package flow still calls
+# them. They are kept as safe no-ops so the app imports and runs, but they
+# intentionally do NOT restore payment-influenced organic ranking. The
+# underlying monetization model (packages that "activate" a listing,
+# boosters that change its rank) needs a real Phase 2 redesign around
+# sponsored_placements — see roadmap V1 sec32 and PHASE1_NOTES.md.
 # ---------------------------------------------------------------------------
 
-async def bump_listing(listing_id: int) -> OKResponse:
+async def activate_listing(listing_id: int) -> OKResponse:
     """
-    Bump a listing's visibility_rank to bring it back to the top.
-    Called by payments.py after a 'refresh_listing' booster purchase.
-    The bump value is deliberately higher than standard activation rank
-    to ensure boosted listings surface above regular ones.
+    DEPRECATED shim. A listing created via create_property_and_listing is
+    already active — there is no separate "pay to activate" state in the
+    Phase 0/1 schema. Left as a no-op so payments.py's legacy package flow
+    does not crash; it should be redesigned in Phase 2 around subscriptions
+    and sponsored_placements rather than gating organic listing visibility.
     """
-    row = await db.get_listing_by_id(listing_id)
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Listing {listing_id} not found.",
-        )
+    return OKResponse(message=f"Listing {listing_id} activation is a no-op under the new schema.")
 
-    # Bump to a high rank tier so the listing appears at top of results
-    bump_rank = _BASE_RANK.get(row["package_type"], 10) + 30
-
-    await db.update_listing(listing_id, {"visibility_rank": bump_rank})
-    return OKResponse(message=f"Listing {listing_id} has been refreshed to the top.")
-
-
-# ---------------------------------------------------------------------------
-# ── FEATURE (Homepage Feature booster) ──────────────────────────────────────
-# ---------------------------------------------------------------------------
 
 async def feature_listing(listing_id: int) -> OKResponse:
-    """
-    Mark a listing as featured (is_featured=True).
-    Called by payments.py after a 'homepage_feature' booster purchase.
-    The boosters.end_date governs automatic expiry — handled by a
-    scheduled job outside this module.
-    """
-    row = await db.get_listing_by_id(listing_id)
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Listing {listing_id} not found.",
-        )
-
-    await db.update_listing(
-        listing_id,
-        {
-            "is_featured": True,
-            "visibility_rank": _BASE_RANK.get(row["package_type"], 10) + 50,
-        },
-    )
-    return OKResponse(message=f"Listing {listing_id} is now featured on the homepage.")
+    """DEPRECATED no-op shim — see module docstring above. Use sponsored_placements."""
+    return OKResponse(message=f"feature_listing({listing_id}) is a no-op; use sponsored_placements instead.")
 
 
 async def unfeature_listing(listing_id: int) -> OKResponse:
-    """
-    Remove homepage feature flag when the booster expires.
-    Called by the scheduled expiry job (not by host directly).
-    """
-    row = await db.get_listing_by_id(listing_id)
-    if not row:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Listing {listing_id} not found.",
-        )
+    """DEPRECATED no-op shim — see module docstring above."""
+    return OKResponse(message=f"unfeature_listing({listing_id}) is a no-op; use sponsored_placements instead.")
 
-    # Restore rank to the package baseline
-    await db.update_listing(
-        listing_id,
-        {
-            "is_featured": False,
-            "visibility_rank": _BASE_RANK.get(row["package_type"], 10),
-        },
-    )
-    return OKResponse(message=f"Homepage feature expired for listing {listing_id}.")
+
+async def bump_listing(listing_id: int) -> OKResponse:
+    """DEPRECATED no-op shim — see module docstring above. There is no rank column to bump."""
+    return OKResponse(message=f"bump_listing({listing_id}) is a no-op; there is no visibility_rank column.")
