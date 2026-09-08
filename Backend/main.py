@@ -228,7 +228,10 @@ if _trusted_hosts_raw != "*":
 # ── ROUTER REGISTRATION ───────────────────────────────────────────────────────
 # ===========================================================================
 
-# Auth — POST /api/auth/signup, POST /api/auth/login
+# Auth — POST /api/auth/signup, POST /api/auth/login, GET /api/auth/me
+# NOTE: auth.py's router has NO prefix of its own — the /api/auth prefix is
+# applied exactly once, here. (Previously this was double-stacked because
+# auth.py also set prefix="/api/auth" on its router — fixed.)
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 
 # Chatbot — POST /api/chat/message, GET /api/chat/history/{id}, DELETE /api/chat/clear/{id}
@@ -613,11 +616,42 @@ async def get_analytics(
 # ===========================================================================
 # ── FRONTEND STATIC FILE SERVING ─────────────────────────────────────────────
 # ===========================================================================
+#
+# The frontend HTML references assets at root-relative paths — e.g.
+# <link href="/css/style.css">, <script src="/js/main.js">,
+# <img src="/Images/Nairobi.jpg"> — NOT under a "/static/..." prefix.
+#
+# Previously everything was mounted under a single "/static" path, which
+# meant every one of those root-relative requests 404'd (GET /css/style.css,
+# GET /js/main.js, GET /Images/Nairobi.jpg, etc. never resolved to anything).
+#
+# Fix: mount each frontend subfolder at the root path the HTML already
+# expects. No HTML changes required.
 
 _frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
 
 if os.path.exists(_frontend_path):
-    # Serve /images, /css, /js as static assets
+    _css_path = os.path.join(_frontend_path, "css")
+    _js_path = os.path.join(_frontend_path, "js")
+    _images_path = os.path.join(_frontend_path, "Images")
+
+    if os.path.exists(_css_path):
+        app.mount("/css", StaticFiles(directory=_css_path), name="css")
+    else:
+        logger.warning(f"CSS directory not found at {_css_path} — /css/* will 404.")
+
+    if os.path.exists(_js_path):
+        app.mount("/js", StaticFiles(directory=_js_path), name="js")
+    else:
+        logger.warning(f"JS directory not found at {_js_path} — /js/* will 404.")
+
+    if os.path.exists(_images_path):
+        app.mount("/Images", StaticFiles(directory=_images_path), name="images")
+    else:
+        logger.warning(f"Images directory not found at {_images_path} — /Images/* will 404.")
+
+    # Keep /static too, in case any page or CSS still references it directly
+    # (e.g. url(/static/...) in an old stylesheet). Harmless to keep both.
     app.mount(
         "/static",
         StaticFiles(directory=_frontend_path),

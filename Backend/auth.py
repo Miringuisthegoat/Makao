@@ -346,3 +346,34 @@ async def change_password(
 
     logger.info(f"Password changed for host id={host.id}")
     return {"ok": True, "message": "Password updated successfully."}
+# ===========================================================================
+# ── ROUTER ───────────────────────────────────────────────────────────────────
+# ===========================================================================
+# No prefix set here on purpose — main.py does:
+#     app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
+# Setting a prefix on both sides was the double-prefix bug
+# (/api/auth/api/auth/signup). Prefix lives in exactly one place: main.py.
+
+from fastapi import APIRouter
+
+router = APIRouter()
+
+
+@router.post("/signup", response_model=TokenResponse, summary="Register a new host")
+async def signup_route(data: SignupRequest) -> TokenResponse:
+    return await signup_host(data)
+
+
+@router.post("/login", response_model=TokenResponse, summary="Log in a host")
+async def login_route(data: LoginRequest) -> TokenResponse:
+    return await login_host(data)
+
+
+@router.get("/me", response_model=UserResponse, summary="Get current authenticated host")
+async def me_route(host: UserResponse = Depends(get_current_host)) -> UserResponse:
+    return host
+
+# NOTE: /change-password is intentionally NOT defined on this router.
+# main.py owns POST /api/auth/change-password with PasswordChangeRequest
+# validation and calls auth_logic.change_password(...) directly. Adding it
+# here too would silently shadow/duplicate that route.

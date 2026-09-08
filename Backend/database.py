@@ -10,12 +10,17 @@ Connection pooling via asyncpg (PostgreSQL) or aiomysql (MySQL).
 
 import os
 import json
-import asyncio
+import asyncpg
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
-import asyncpg
+try:
+    import asyncpg
+except ImportError:
+    raise ImportError(
+        "asyncpg is required. Install it with: pip install asyncpg"
+    )
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -38,6 +43,9 @@ async def get_pool() -> asyncpg.Pool:
             database=os.getenv("DB_NAME", "makao"),
             user=os.getenv("DB_USER", "makao_user"),
             password=os.getenv("DB_PASSWORD", ""),
+            # Neon (and most hosted Postgres) requires TLS. Set DB_SSLMODE=disable
+            # in .env for a local/Docker Postgres that has no TLS listener.
+            ssl=os.getenv("DB_SSLMODE", "disable"),
             min_size=2,
             max_size=10,
             command_timeout=30,
@@ -1086,6 +1094,13 @@ async def get_listing_stats(host_id: int) -> List[Dict[str, Any]]:
     Return per-listing stats for the analytics dashboard.
     Currently tracks: listing count, active boosters, payment totals.
     (View/enquiry counters can be added later with a separate events table.)
+
+    NOTE: this query still references l.city / l.county / l.is_available /
+    l.is_featured / l.visibility_rank directly on `listings`, which predate
+    the Phase 0 property/listing split and no longer exist as columns on
+    `listings`. It will raise an UndefinedColumnError against the current
+    schema. Flagged for a Phase 1B/dashboard fix — not modified here since
+    it's outside today's scope (getting the app booting against a real DB).
     """
     pool = await get_pool()
     async with pool.acquire() as conn:
